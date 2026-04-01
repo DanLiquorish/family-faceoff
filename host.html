@@ -303,6 +303,7 @@
       <button class="btn btn-primary" id="start-btn" onclick="hostStartGame()" disabled>Start game</button>
       <button class="btn btn-outline" onclick="openSettings()">⚙ Settings</button>
       <button class="btn btn-outline" onclick="showLeaderboard()">Leaderboard</button>
+      <button class="btn btn-outline" onclick="hardReset()" style="border-color:var(--red);color:var(--red);" title="Wipe this room and start completely fresh">↺ Reset</button>
     </div>
 
     <div style="margin-top:2rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 2rem;max-width:480px;">
@@ -529,79 +530,26 @@ function getTimerSecs(type) {
 
 // Generate room code and set up listeners
 async function init() {
-  // Check if there's an active room saved from a previous session
-  let savedCode = null;
-  try { savedCode = localStorage.getItem('ff_host_room'); } catch(e){}
-
-  if (savedCode) {
-    // Try to reconnect to the existing room
-    const snap = await get(ref(db, `rooms/${savedCode}`));
-    if (snap.exists()) {
-      const room = snap.val();
-      // Only reconnect if the game is still active (not gameover)
-      if (room.status && room.status !== 'gameover') {
-        state.roomCode = savedCode;
-        // Restore scores and round state
-        if (room.scores) state.scores = room.scores;
-        if (room.round) state.currentRound = room.round;
-        if (room.totalRounds) state.totalRounds = room.totalRounds;
-        if (room.gameTypes) state.gameTypes = room.gameTypes;
-        document.getElementById('room-code-display').textContent = state.roomCode;
-        showReconnectBanner(room);
-        setupListeners();
-        return;
-      }
-    }
-  }
-
-  // No saved room or it's expired — create a fresh one
   state.roomCode = Math.random().toString(36).substr(2,5).toUpperCase();
   document.getElementById('room-code-display').textContent = state.roomCode;
-  try { localStorage.setItem('ff_host_room', state.roomCode); } catch(e){}
 
   await set(ref(db, `rooms/${state.roomCode}`), {
-    status: 'lobby',
-    round: 0,
-    totalRounds: state.totalRounds
+    status: 'lobby', round: 0, totalRounds: state.totalRounds
   });
 
-  setupListeners();
+  setupRoomListeners(state.roomCode);
 }
 
-function showReconnectBanner(room) {
-  // Show a reconnect notice on the lobby screen
-  const banner = document.createElement('div');
-  banner.style.cssText = 'background:rgba(52,211,153,0.15);border:1px solid var(--green);border-radius:14px;padding:1rem 1.5rem;max-width:500px;margin-top:1rem;font-size:0.9rem;color:var(--green);';
-  const statusMap = { lobby:'in the lobby', playing:'in progress', question:'mid-question', revealed:'between questions', 'round-intro':'between rounds' };
-  banner.innerHTML = `<strong>Reconnected!</strong> Room <strong>${state.roomCode}</strong> was ${statusMap[room.status]||'active'}. Players can rejoin using the same code. <button onclick="restartCurrentQuestion()" style="background:none;border:1px solid var(--green);border-radius:50px;padding:4px 12px;color:var(--green);cursor:pointer;font-size:0.85rem;margin-left:8px;">Restart question</button>`;
-  const lobby = document.querySelector('#screen-lobby > div');
-  if (lobby) lobby.appendChild(banner);
-}
-
-async function restartCurrentQuestion() {
-  // Clear current answers and re-push the question so players get it again
-  await remove(ref(db, `rooms/${state.roomCode}/answers`));
-  await remove(ref(db, `rooms/${state.roomCode}/guesses`));
-  state.answered = {};
-  state.guesses = {};
-  state.revealed = false;
-  // Re-launch the current round from the host side
-  if (state.currentRound > 0) {
-    await launchRound();
-  }
-}
-window.restartCurrentQuestion = restartCurrentQuestion;
-
-function setupListeners() {
-  onValue(ref(db, `rooms/${state.roomCode}/players`), snap => {
+function setupRoomListeners(code) {
+  onValue(ref(db, `rooms/${code}/players`), snap => {
     state.players = snap.val() || {};
     renderLobbyPlayers();
   });
-  onValue(ref(db, `rooms/${state.roomCode}/answers`), snap => {
+  onValue(ref(db, `rooms/${code}/answers`), snap => {
     state.answered = snap.val() || {};
     renderAnswerProgress();
   });
-  onValue(ref(db, `rooms/${state.roomCode}/guesses`), snap => {
+  onValue(ref(db, `rooms/${code}/guesses`), snap => {
     state.guesses = snap.val() || {};
     renderGuesses();
   });
@@ -628,8 +576,7 @@ async function hostStartGame() {
   state.totalRounds = state.settings.rounds;
   state.gameTypes = state.settings.gameTypes;
   Object.values(state.players).forEach(p => state.scores[p.name] = 0);
-  try { localStorage.setItem('ff_host_room', state.roomCode); } catch(e){}
-  await update(ref(db, `rooms/${state.roomCode}`), { status: 'playing', totalRounds: state.totalRounds, gameTypes: state.gameTypes });
+  await update(ref(db, `rooms/${state.roomCode}`), { status: 'playing', totalRounds: state.totalRounds });
   await launchRound();
 }
 window.hostStartGame = hostStartGame;
@@ -641,8 +588,6 @@ async function launchRound() {
   state.revealed = false;
   await remove(ref(db, `rooms/${state.roomCode}/answers`));
   await remove(ref(db, `rooms/${state.roomCode}/guesses`));
-  // Save round progress so host can reconnect
-  await update(ref(db, `rooms/${state.roomCode}`), { round: state.currentRound, scores: state.scores });
 
   const type = state.gameTypes[Math.floor(Math.random() * state.gameTypes.length)];
   state.currentType = type;
@@ -1045,6 +990,37 @@ window.playAgain = () => {
   update(ref(db, `rooms/${state.roomCode}`), { status: 'lobby', round: 0 });
   remove(ref(db, `rooms/${state.roomCode}/answers`));
   remove(ref(db, `rooms/${state.roomCode}/guesses`));
+  showScreen('screen-lobby');
+};
+
+window.hardReset = async () => {
+  if (!confirm('This will wipe the current game and create a brand new room. All players will need to rejoin. Continue?')) return;
+  clearTimer();
+  // Wipe the old room from Firebase
+  try { await remove(ref(db, `rooms/${state.roomCode}`)); } catch(e){}
+  // Clear saved room code
+  try { localStorage.removeItem('ff_host_room'); } catch(e){}
+  // Reset all state
+  state.roomCode = '';
+  state.players = {};
+  state.scores = {};
+  state.currentRound = 0;
+  state.answered = {};
+  state.guesses = {};
+  state.revealed = false;
+  // Generate a fresh room code and reinitialise
+  state.roomCode = Math.random().toString(36).substr(2,5).toUpperCase();
+  document.getElementById('room-code-display').textContent = state.roomCode;
+  try { localStorage.setItem('ff_host_room', state.roomCode); } catch(e){}
+  await set(ref(db, `rooms/${state.roomCode}`), { status: 'lobby', round: 0, totalRounds: state.totalRounds });
+  setupRoomListeners(state.roomCode);
+  // Clear any reconnect banner
+  const banner = document.querySelector('#screen-lobby .reconnect-banner');
+  if (banner) banner.remove();
+  document.getElementById('lobby-players').innerHTML = '';
+  document.getElementById('player-count-text').textContent = '0 players';
+  document.getElementById('waiting-text').textContent = 'Waiting for players to join...';
+  document.getElementById('start-btn').disabled = true;
   showScreen('screen-lobby');
 };
 
