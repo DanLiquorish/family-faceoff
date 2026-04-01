@@ -7,161 +7,68 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0e17;
-    --surface: #1a1927;
-    --surface2: #232235;
-    --accent: #ff6b35;
-    --accent2: #f7c59f;
-    --purple: #a78bfa;
-    --teal: #2dd4bf;
-    --green: #34d399;
-    --red: #f87171;
-    --text: #fffffe;
-    --muted: #a7a9be;
-    --border: rgba(255,255,255,0.08);
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
+    --bg:#0f0e17; --surface:#1a1927; --surface2:#232235;
+    --accent:#ff6b35; --accent2:#f7c59f; --purple:#a78bfa;
+    --green:#34d399; --red:#f87171; --text:#fffffe; --muted:#a7a9be;
+    --border:rgba(255,255,255,0.08);
+    --font-display:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
-
-  body::before {
-    content:'';
-    position:fixed;inset:0;
-    background: radial-gradient(circle at 30% 10%, rgba(167,139,250,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 90%, rgba(255,107,53,0.1) 0%, transparent 50%);
-    pointer-events:none;z-index:0;
-  }
-
-  .screen { display:none; min-height:100vh; position:relative; z-index:1; }
-  .screen.active { display:flex; flex-direction:column; }
-
-  /* JOIN SCREEN */
-  #screen-join { align-items:center; justify-content:center; padding:2rem 1.5rem; text-align:center; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; }
+  body::before { content:''; position:fixed; inset:0; background:radial-gradient(circle at 30% 10%,rgba(167,139,250,0.1) 0%,transparent 50%),radial-gradient(circle at 70% 90%,rgba(255,107,53,0.1) 0%,transparent 50%); pointer-events:none; z-index:0; }
+  .screen { display:none; min-height:100vh; position:relative; z-index:1; flex-direction:column; }
+  .screen.active { display:flex; }
   .logo { font-family:var(--font-display); font-size:3rem; letter-spacing:2px; }
   .logo span { color:var(--accent); }
-  .tagline { color:var(--muted); font-size:0.9rem; margin:0.25rem 0 2rem; }
-  .join-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem 1.5rem; width:100%; max-width:360px; }
-  .field-label { font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem; display:block; }
-  input[type=text], input[type=number] {
-    width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:12px;
-    padding:14px 16px; color:var(--text); font-size:1rem; font-family:var(--font-body);
-    margin-bottom:1.25rem; outline:none; transition:border-color 0.2s;
-  }
+  input[type=text], input[type=number] { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; color:var(--text); font-size:1rem; font-family:var(--font-body); margin-bottom:1.25rem; outline:none; transition:border-color 0.2s; }
   input[type=text]:focus, input[type=number]:focus { border-color:var(--purple); }
-  input[type=text]::placeholder, input[type=number]::placeholder { color:var(--muted); }
+  input::placeholder { color:var(--muted); }
   .btn { width:100%; padding:16px; border-radius:50px; border:none; font-family:var(--font-body); font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
   .btn-primary { background:var(--accent); color:white; }
   .btn-primary:active { background:#cc5a2a; transform:scale(0.98); }
-  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
-  .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
-  .btn-outline:active { background:var(--surface); }
-
-  /* WAITING SCREEN */
-  #screen-waiting { align-items:center; justify-content:center; padding:2rem 1.5rem; text-align:center; }
-  .waiting-avatar { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:600; margin:0 auto 1rem; }
-  .waiting-name { font-family:var(--font-display); font-size:2.5rem; }
-  .waiting-msg { color:var(--muted); margin:0.5rem 0 2rem; }
+  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+  .spinner { width:40px; height:40px; border:3px solid var(--surface2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
   .pulse { animation:pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
-  /* QUESTION SCREEN */
-  #screen-question { padding:1.25rem; justify-content:flex-start; }
-  .q-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-  .q-round { font-family:var(--font-display); color:var(--muted); font-size:1.2rem; }
-  .q-type { background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:5px 14px; font-size:0.8rem; color:var(--accent2); }
-  .q-timer { font-family:var(--font-display); font-size:2rem; color:var(--accent); min-width:36px; text-align:right; }
-  .q-text { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.25rem; margin-bottom:1.25rem; font-size:1.05rem; font-weight:500; line-height:1.5; }
-  .q-subtext { font-size:0.85rem; color:var(--muted); margin-bottom:1rem; }
-
-  /* Answer options */
-  .option-btn {
-    width:100%; background:var(--surface); border:1px solid var(--border); border-radius:14px;
-    padding:16px 18px; color:var(--text); font-size:1rem; font-family:var(--font-body); font-weight:500;
-    cursor:pointer; text-align:left; margin-bottom:10px; display:flex; align-items:center; gap:12px;
-    transition:all 0.15s;
-  }
+  .reveal { animation:reveal 0.35s ease; }
+  @keyframes reveal { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .option-btn { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; color:var(--text); font-size:1rem; font-family:var(--font-body); font-weight:500; cursor:pointer; text-align:left; margin-bottom:10px; display:flex; align-items:center; gap:12px; transition:all 0.15s; }
   .option-btn:active:not(:disabled) { transform:scale(0.98); }
   .option-btn:disabled { cursor:not-allowed; }
   .option-btn.selected { background:rgba(167,139,250,0.2); border-color:var(--purple); }
   .option-btn.correct { background:rgba(52,211,153,0.2); border-color:var(--green); }
   .option-btn.wrong { background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); opacity:0.6; }
   .opt-letter { font-family:var(--font-display); font-size:1.4rem; color:var(--muted); min-width:22px; }
-
-  /* Anagram input */
-  .anagram-tiles { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:0.75rem 0 1.25rem; }
-  .anagram-tile { background:var(--surface2); border:2px solid var(--border); border-radius:10px; width:46px; height:54px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:1.7rem; color:var(--accent2); }
-
-  /* This or That */
-  .tot-container { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:0.5rem; }
-  .tot-btn {
-    background:var(--surface); border:1px solid var(--border); border-radius:16px;
-    padding:1.5rem 1rem; font-family:var(--font-body); font-weight:600; font-size:0.95rem;
-    color:var(--text); cursor:pointer; transition:all 0.15s; text-align:center; min-height:120px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
-  }
-  .tot-btn:active:not(:disabled) { transform:scale(0.97); }
-  .tot-btn.selected-a { background:rgba(167,139,250,0.25); border-color:var(--purple); }
-  .tot-btn.selected-b { background:rgba(255,107,53,0.2); border-color:var(--accent); }
-  .tot-btn:disabled { cursor:not-allowed; }
-  .tot-letter { font-family:var(--font-display); font-size:2rem; color:var(--muted); }
-
-  /* Closest number */
-  .guess-wrap { margin-top:0.75rem; }
-  .guess-input-row { display:flex; gap:10px; margin-bottom:1rem; }
-  .guess-input-row input { flex:1; margin-bottom:0; font-size:1.3rem; text-align:center; font-family:var(--font-display); letter-spacing:2px; }
-
-  /* Result overlay */
-  .result-card { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:1rem 1.25rem; margin-top:1rem; }
-  .result-label { font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:0.25rem; }
-  .result-value { font-size:1rem; line-height:1.4; }
-
-  /* Score display */
-  .score-badge { display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:6px 14px; font-size:0.85rem; }
-  .score-num { font-family:var(--font-display); font-size:1.2rem; color:var(--accent); }
-
-  /* ANSWERED WAITING */
-  #screen-answered { align-items:center; justify-content:center; padding:2rem; text-align:center; }
-  .answered-icon { font-size:3rem; margin-bottom:1rem; }
-  .answered-msg { font-family:var(--font-display); font-size:2rem; margin-bottom:0.5rem; }
-
-  /* GAMEOVER */
-  #screen-gameover { align-items:center; justify-content:center; padding:2rem 1.5rem; text-align:center; }
-  .go-title { font-family:var(--font-display); font-size:3rem; margin-bottom:0.5rem; }
-  .go-score { font-family:var(--font-display); font-size:5rem; color:var(--accent); line-height:1; }
-  .go-label { color:var(--muted); margin-bottom:2rem; }
-  .go-rank { font-family:var(--font-display); font-size:1.5rem; color:var(--purple); margin-bottom:2rem; }
-
-  .spinner { width:40px; height:40px; border:3px solid var(--surface2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-
-  .reveal { animation:reveal 0.35s ease; }
-  @keyframes reveal { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 
 <!-- JOIN -->
 <div id="screen-join" class="screen active">
-  <div class="logo">FAMILY<span>FACEOFF</span></div>
-  <p class="tagline">Join the game on your device</p>
-  <div class="join-card">
-    <label class="field-label">Your name</label>
-    <input type="text" id="input-name" placeholder="Enter your name..." maxlength="20" />
-    <label class="field-label">Room code</label>
-    <input type="text" id="input-code" placeholder="e.g. AB3X7" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-family:var(--font-display);font-size:1.5rem;" />
-    <button class="btn btn-primary" onclick="joinGame()">Join game</button>
-    <p id="join-error" style="color:var(--red);font-size:0.85rem;margin-top:0.75rem;display:none;"></p>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem 1.5rem;text-align:center;">
+    <div class="logo">FAMILY<span>FACEOFF</span></div>
+    <p style="color:var(--muted);font-size:0.9rem;margin:0.25rem 0 1.5rem;">Join the game on your device</p>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem 1.5rem;width:100%;max-width:360px;">
+      <label style="font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;display:block;">Your name</label>
+      <input type="text" id="input-name" placeholder="Enter your name..." maxlength="20" />
+      <label style="font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;display:block;">Room code</label>
+      <input type="text" id="input-code" placeholder="e.g. AB3X7" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-family:var(--font-display);font-size:1.5rem;" />
+      <button class="btn btn-primary" onclick="joinGame()">Join game</button>
+      <p id="join-error" style="color:var(--red);font-size:0.85rem;margin-top:0.75rem;display:none;"></p>
+    </div>
   </div>
 </div>
 
-<!-- WAITING IN LOBBY -->
+<!-- WAITING -->
 <div id="screen-waiting" class="screen">
-  <div class="waiting-avatar" id="waiting-avatar"></div>
-  <div class="waiting-name" id="waiting-name"></div>
-  <p class="waiting-msg" id="waiting-msg">You're in! Waiting for the host to start...</p>
-  <div class="spinner pulse"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;text-align:center;">
+    <div id="waiting-avatar" style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:600;margin:0 auto 1rem;"></div>
+    <div style="font-family:var(--font-display);font-size:2.5rem;" id="waiting-name"></div>
+    <p style="color:var(--muted);margin:0.5rem 0 2rem;" id="waiting-msg">You're in! Waiting for the host to start...</p>
+    <div class="spinner pulse"></div>
+  </div>
 </div>
 
 <!-- ROUND INTRO -->
@@ -171,56 +78,57 @@
     <div style="font-family:var(--font-display);font-size:4rem;color:var(--accent);line-height:1;" id="p-intro-round">ROUND 1</div>
     <div style="font-family:var(--font-display);font-size:2rem;margin-bottom:0.5rem;" id="p-intro-title">GENERAL KNOWLEDGE</div>
     <p style="color:var(--muted);font-size:0.95rem;">Get ready...</p>
-    <div style="margin-top:2rem;" class="pulse">
-      <div class="spinner"></div>
-      <p style="color:var(--muted);margin-top:0.75rem;font-size:0.85rem;">Preparing questions...</p>
-    </div>
+    <div style="margin-top:2rem;" class="pulse"><div class="spinner"></div><p style="color:var(--muted);margin-top:0.75rem;font-size:0.85rem;">Preparing questions...</p></div>
   </div>
 </div>
 
 <!-- QUESTION -->
 <div id="screen-question" class="screen">
-  <div class="q-header">
-    <div class="q-round" id="q-round">ROUND 1</div>
-    <div class="score-badge">Score: <span class="score-num" id="my-score">0</span></div>
-    <div class="q-timer" id="q-timer">20</div>
-  </div>
-  <div class="q-type" id="q-type" style="margin-bottom:1rem;">Trivia</div>
-  <div class="q-text" id="q-text"></div>
-  <div id="q-answer-area"></div>
-  <div id="q-result" style="display:none;" class="reveal">
-    <div class="result-card">
-      <div class="result-label">Result</div>
-      <div class="result-value" id="q-result-text"></div>
+  <div style="padding:1.25rem;display:flex;flex-direction:column;flex:1;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <div style="font-family:var(--font-display);color:var(--muted);font-size:1rem;" id="q-round">ROUND 1</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:4px 12px;font-size:0.8rem;color:var(--accent2);" id="q-num">Q 1</div>
+      <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent);" id="q-timer">20</div>
+    </div>
+    <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;" id="q-type"></div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:6px 14px;font-size:0.85rem;margin-bottom:1rem;">Score: <span style="font-family:var(--font-display);font-size:1.2rem;color:var(--accent);" id="my-score">0</span></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:1rem;font-size:1rem;font-weight:500;line-height:1.5;" id="q-text"></div>
+    <div id="q-answer-area"></div>
+    <div id="q-result" style="display:none;" class="reveal">
+      <div id="q-result-card" style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin-top:1rem;">
+        <div style="font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;">Result</div>
+        <div id="q-result-text"></div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ANSWERED — WAITING FOR OTHERS -->
+<!-- ANSWERED WAITING -->
 <div id="screen-answered" class="screen">
-  <div class="answered-icon" id="answered-icon">✓</div>
-  <div class="answered-msg" id="answered-msg">Answer submitted!</div>
-  <p style="color:var(--muted);margin-bottom:2rem;" id="answered-sub">Waiting for the host...</p>
-  <div class="spinner"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;" id="answered-icon">✓</div>
+    <div style="font-family:var(--font-display);font-size:2rem;margin-bottom:0.5rem;" id="answered-msg">Submitted!</div>
+    <p style="color:var(--muted);margin-bottom:2rem;" id="answered-sub">Next question coming...</p>
+    <div class="spinner"></div>
+  </div>
 </div>
 
 <!-- GAME OVER -->
 <div id="screen-gameover" class="screen">
-  <div class="go-title">FINAL SCORE</div>
-  <div class="go-score" id="go-score">0</div>
-  <div class="go-label">points</div>
-  <div class="go-rank" id="go-rank"></div>
-  <p style="color:var(--muted);margin-bottom:2rem;">Thanks for playing!</p>
-  <button class="btn btn-primary" onclick="showScreen('screen-join')" style="max-width:300px;">Play again</button>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem 1.5rem;text-align:center;">
+    <div style="font-family:var(--font-display);font-size:2.5rem;margin-bottom:0.5rem;">FINAL SCORE</div>
+    <div style="font-family:var(--font-display);font-size:5rem;color:var(--accent);line-height:1;" id="go-score">0</div>
+    <div style="color:var(--muted);margin-bottom:0.5rem;">points</div>
+    <div style="font-family:var(--font-display);font-size:1.5rem;color:var(--purple);margin:0.5rem 0 2rem;" id="go-rank"></div>
+    <p style="color:var(--muted);margin-bottom:2rem;">Thanks for playing!</p>
+    <button class="btn btn-primary" onclick="resetToJoin()" style="max-width:300px;">Play again</button>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// =============================================
-// PASTE YOUR FIREBASE CONFIG HERE (same as host.html)
-// =============================================
 const firebaseConfig = {
   apiKey: "AIzaSyAZSgZ_Csfb6ui_8R1XdzOX1Tj7Iz1o6-I",
   authDomain: "family-faceoff-8ad0b.firebaseapp.com",
@@ -230,191 +138,151 @@ const firebaseConfig = {
   messagingSenderId: "123359290040",
   appId: "1:123359290040:web:3d1d30af10f29328e6ca4d"
 };
-// =============================================
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const COLORS = [
-  {bg:'#a78bfa',text:'#1a0040'},
-  {bg:'#ff6b35',text:'#2a1000'},
-  {bg:'#2dd4bf',text:'#002a26'},
-  {bg:'#fbbf24',text:'#2a1a00'},
-  {bg:'#34d399',text:'#00270f'},
-  {bg:'#f472b6',text:'#2a0020'},
+  {bg:'#a78bfa',text:'#1a0040'},{bg:'#ff6b35',text:'#2a1000'},
+  {bg:'#2dd4bf',text:'#002a26'},{bg:'#fbbf24',text:'#2a1a00'},
+  {bg:'#34d399',text:'#00270f'},{bg:'#f472b6',text:'#2a0020'},
 ];
 
 let state = {
-  name: '',
-  roomCode: '',
-  myColor: COLORS[0],
-  myScore: 0,
-  currentRound: 0,
-  hasAnswered: false,
-  timerInterval: null,
-  timeLeft: 0,
-  seenQuestion: null,
-  roomListener: null
+  name:'', roomCode:'', myColor:COLORS[0], myScore:0,
+  hasAnswered:false, timerInterval:null, timeLeft:0, seenQuestion:null
 };
 
 async function joinGame() {
   const name = document.getElementById('input-name').value.trim();
   const code = document.getElementById('input-code').value.trim().toUpperCase();
   const errEl = document.getElementById('join-error');
-  errEl.style.display = 'none';
-  if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display='block'; return; }
-  if (!code || code.length < 4) { errEl.textContent = 'Please enter a valid room code.'; errEl.style.display='block'; return; }
-
+  errEl.style.display='none';
+  if (!name) { errEl.textContent='Please enter your name.'; errEl.style.display='block'; return; }
+  if (!code||code.length<4) { errEl.textContent='Please enter a valid room code.'; errEl.style.display='block'; return; }
   let roomSnap;
   try {
-    roomSnap = await get(ref(db, `rooms/${code}`));
-    if (!roomSnap.exists()) { errEl.textContent = 'Room not found. Check the code!'; errEl.style.display='block'; return; }
-  } catch(e) {
-    errEl.textContent = 'Could not connect. Check your Firebase config.'; errEl.style.display='block'; return;
-  }
+    roomSnap = await get(ref(db,`rooms/${code}`));
+    if (!roomSnap.exists()) { errEl.textContent='Room not found. Check the code!'; errEl.style.display='block'; return; }
+  } catch(e) { errEl.textContent='Could not connect. Check your Firebase config.'; errEl.style.display='block'; return; }
 
-  state.name = name;
-  state.roomCode = code;
-
-  // Check if this player already has a score (rejoining)
+  state.name=name; state.roomCode=code; state.seenQuestion=null;
   const room = roomSnap.val();
   const existingScore = room.scores?.[name];
-  const isRejoining = existingScore !== undefined;
-  state.myScore = isRejoining ? existingScore : 0;
+  state.myScore = existingScore !== undefined ? existingScore : 0;
 
-  // Re-register player in Firebase
-  await update(ref(db, `rooms/${code}/players/${name}`), { name, joined: Date.now() });
-
-  // Pick color based on join order
-  const snap = await get(ref(db, `rooms/${code}/players`));
-  const players = snap.val() || {};
+  await update(ref(db,`rooms/${code}/players/${name}`),{name,joined:Date.now()});
+  const snap = await get(ref(db,`rooms/${code}/players`));
+  const players = snap.val()||{};
   const idx = Object.keys(players).indexOf(name);
-  state.myColor = COLORS[idx % COLORS.length];
+  state.myColor = COLORS[idx%COLORS.length];
 
-  // Show waiting screen with rejoin message if applicable
   const av = document.getElementById('waiting-avatar');
-  av.style.background = state.myColor.bg;
-  av.style.color = state.myColor.text;
-  av.textContent = name[0].toUpperCase();
-  document.getElementById('waiting-name').textContent = name;
-
-  const waitMsg = document.getElementById('waiting-msg');
-  if (isRejoining) {
-    waitMsg.innerHTML = `Welcome back! Your score of <strong style="color:var(--accent);">${existingScore}</strong> has been restored. Waiting for the next question...`;
-  } else {
-    waitMsg.textContent = "You're in! Waiting for the host to start...";
-  }
-
+  av.style.background=state.myColor.bg; av.style.color=state.myColor.text; av.textContent=name[0].toUpperCase();
+  document.getElementById('waiting-name').textContent=name;
+  const isRejoining = existingScore !== undefined;
+  document.getElementById('waiting-msg').innerHTML = isRejoining
+    ? `Welcome back! Your score of <strong style="color:var(--accent);">${existingScore}</strong> has been restored.`
+    : "You're in! Waiting for the host to start...";
   showScreen('screen-waiting');
   listenToRoom();
 }
-window.joinGame = joinGame;
+window.joinGame=joinGame;
 
 function listenToRoom() {
-  onValue(ref(db, `rooms/${state.roomCode}`), snap => {
-    const room = snap.val();
+  onValue(ref(db,`rooms/${state.roomCode}`), snap => {
+    const room=snap.val();
     if (!room) return;
-    const status = room.status;
+    const status=room.status;
 
-    // Update score whenever available
-    if (room.scores?.[state.name] !== undefined) {
-      state.myScore = room.scores[state.name];
-      const el = document.getElementById('my-score');
-      if (el) el.textContent = state.myScore;
+    if (room.scores?.[state.name]!==undefined) {
+      state.myScore=room.scores[state.name];
+      const el=document.getElementById('my-score');
+      if(el) el.textContent=state.myScore;
     }
 
-    if (status === 'round-intro') {
-      const introIcon = document.getElementById('p-intro-icon');
-      const introRound = document.getElementById('p-intro-round');
-      const introTitle = document.getElementById('p-intro-title');
-      if (introIcon) introIcon.textContent = room.roundIcon || '🎮';
-      if (introRound) introRound.textContent = `ROUND ${room.roundNum || room.round || ''}`;
-      if (introTitle) introTitle.textContent = (room.roundLabel || '').toUpperCase();
+    if (status==='round-intro') {
+      document.getElementById('p-intro-icon').textContent=room.roundIcon||'🎮';
+      document.getElementById('p-intro-round').textContent=`ROUND ${room.roundNum||''}`;
+      document.getElementById('p-intro-title').textContent=(room.roundLabel||'').toUpperCase();
       showScreen('screen-round-intro');
-    } else if (status === 'question') {
-      // Support both old field names (round, currentType) and new (roundNum, roundId, questionNum)
-      const roundNum = room.roundNum || room.round || 1;
-      const roundId = room.roundId || room.currentType || 'trivia';
-      const questionNum = room.questionNum || room.round || 1;
-      const qKey = `${roundNum}-${questionNum}`;
-      if (qKey !== state.seenQuestion) {
-        state.seenQuestion = qKey;
-        state.hasAnswered = false;
-        const q = JSON.parse(room.currentQuestion || '{}');
-        renderQuestion(q, roundId, roundNum, questionNum);
+    } else if (status==='question') {
+      const qKey=`${room.roundNum}-${room.questionNum}`;
+      if (qKey!==state.seenQuestion) {
+        state.seenQuestion=qKey;
+        state.hasAnswered=false;
+        const q=JSON.parse(room.currentQuestion||'{}');
+        renderQuestion(q, room.roundId, room.roundNum, room.questionNum);
         showScreen('screen-question');
       }
-    } else if (status === 'revealed') {
+    } else if (status==='revealed') {
       if (!state.hasAnswered) {
+        document.getElementById('answered-icon').textContent='⏱';
+        document.getElementById('answered-msg').textContent="Time's up!";
+        document.getElementById('answered-sub').textContent='Next question coming...';
         showScreen('screen-answered');
-        document.getElementById('answered-icon').textContent = '⏱';
-        document.getElementById('answered-msg').textContent = "Time's up!";
-        document.getElementById('answered-sub').textContent = 'Next question coming...';
       }
-    } else if (status === 'gameover') {
-      const scores = room.scores || {};
-      const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-      const rank = sorted.findIndex(([n])=>n===state.name) + 1;
-      state.myScore = scores[state.name] || 0;
-      document.getElementById('go-score').textContent = state.myScore;
-      document.getElementById('go-rank').textContent = rank===1?'🏆 Winner!':rank===2?'🥈 2nd place':rank===3?'🥉 3rd place':`#${rank} place`;
+    } else if (status==='gameover') {
+      const scores=room.scores||{};
+      const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+      const rank=sorted.findIndex(([n])=>n===state.name)+1;
+      state.myScore=scores[state.name]||0;
+      document.getElementById('go-score').textContent=state.myScore;
+      document.getElementById('go-rank').textContent=rank===1?'🏆 Winner!':rank===2?'🥈 2nd place':rank===3?'🥉 3rd place':`#${rank} place`;
       clearTimer();
       showScreen('screen-gameover');
-    } else if (status === 'lobby') {
-      state.currentRound = 0;
-      state.myScore = 0;
-      state.seenQuestion = null;
+    } else if (status==='lobby') {
+      state.myScore=0; state.seenQuestion=null;
       if (state.name) showScreen('screen-waiting');
     }
   });
 }
 
-async function fetchWikipediaImage(searchTerm) {
+async function fetchWikiImg(term) {
   try {
-    const resp = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchTerm)}`);
-    const data = await resp.json();
-    return data.thumbnail?.source || data.originalimage?.source || null;
+    const r=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`);
+    const d=await r.json();
+    return d.thumbnail?.source||d.originalimage?.source||null;
   } catch(e) { return null; }
 }
 
 function renderQuestion(q, roundId, roundNum, questionNum) {
   clearTimer();
-  document.getElementById('q-round').textContent = `ROUND ${roundNum}`;
-  document.getElementById('q-type').textContent = {
-    general:'🧠 General Knowledge', sport:'⚽ Sport', music:'🎵 Music',
-    closest:'🔢 Closest Number', landmark:'🌍 Where In The World', history:'📰 Recent History'
-  }[roundId] || roundId;
-  document.getElementById('q-result').style.display = 'none';
-  document.getElementById('my-score').textContent = state.myScore;
+  document.getElementById('q-round').textContent=`ROUND ${roundNum}`;
+  document.getElementById('q-num').textContent=`Q ${questionNum}`;
+  document.getElementById('q-type').textContent={
+    general:'🧠 General Knowledge',sport:'⚽ Sport',music:'🎵 Music',
+    closest:'🔢 Closest Number',landmark:'🌍 Where In The World',history:'📰 Recent History'
+  }[roundId]||roundId;
+  document.getElementById('q-result').style.display='none';
+  document.getElementById('my-score').textContent=state.myScore;
 
-  const area = document.getElementById('q-answer-area');
-  area.innerHTML = '';
-  const qText = document.getElementById('q-text');
+  const area=document.getElementById('q-answer-area');
+  area.innerHTML='';
+  const qText=document.getElementById('q-text');
+  const isMulti=['general','sport','music','history','landmark'].includes(roundId);
 
-  const isMultiChoice = ['general','sport','music','history','landmark'].includes(roundId);
-
-  if (roundId === 'landmark') {
-    // Show Wikipedia image
-    const imgWrap = document.createElement('div');
-    imgWrap.style.cssText = 'background:var(--surface2);border-radius:14px;min-height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;overflow:hidden;';
-    imgWrap.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;padding:1rem;">Loading image...</p>';
+  if (roundId==='landmark') {
+    const imgWrap=document.createElement('div');
+    imgWrap.style.cssText='background:var(--surface2);border-radius:14px;min-height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;overflow:hidden;';
+    imgWrap.innerHTML='<p style="color:var(--muted);font-size:0.85rem;padding:1rem;">Loading image...</p>';
     area.appendChild(imgWrap);
-    fetchWikipediaImage(q.wikiSearch).then(imgUrl => {
-      imgWrap.innerHTML = imgUrl
-        ? `<img src="${imgUrl}" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px;" alt="Where is this?" />`
-        : `<p style="color:var(--muted);padding:1.5rem;font-size:0.9rem;">📍 Somewhere in the world...</p>`;
+    fetchWikiImg(q.wikiSearch).then(url=>{
+      imgWrap.innerHTML=url
+        ?`<img src="${url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px;" alt="Where is this?" />`
+        :`<p style="color:var(--muted);padding:1.5rem;font-size:0.9rem;">📍 Somewhere in the world...</p>`;
     });
-    qText.textContent = q.description;
-    renderMultiChoice(q, area, roundId);
+    qText.textContent=q.description;
+    renderMultiChoice(q,area);
     startTimer(30);
-  } else if (isMultiChoice) {
-    qText.textContent = q.question;
-    renderMultiChoice(q, area, roundId);
+  } else if (isMulti) {
+    qText.textContent=q.question;
+    renderMultiChoice(q,area);
     startTimer(20);
-  } else if (roundId === 'closest') {
-    qText.textContent = q.question;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = `<div style="display:flex;gap:10px;margin-bottom:1rem;">
+  } else if (roundId==='closest') {
+    qText.textContent=q.question;
+    const wrap=document.createElement('div');
+    wrap.innerHTML=`<div style="display:flex;gap:10px;margin-bottom:1rem;">
       <input type="number" id="guess-input" placeholder="Your guess..." style="flex:1;margin-bottom:0;font-size:1.3rem;text-align:center;font-family:var(--font-display);letter-spacing:2px;" />
       <button class="btn btn-primary" onclick="submitGuess()" style="width:auto;padding:14px 20px;border-radius:12px;flex-shrink:0;">Submit</button>
     </div>`;
@@ -423,107 +291,71 @@ function renderQuestion(q, roundId, roundNum, questionNum) {
   }
 }
 
-function renderMultiChoice(q, area, roundId) {
-  q.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn reveal';
-    btn.style.animationDelay = (i * 0.06) + 's';
-    btn.innerHTML = `<span class="opt-letter">${'ABCD'[i]}</span> ${opt.replace(/^[A-D]\.\s*/,'')}`;
-    btn.onclick = () => submitAnswer(i, q, btn);
+function renderMultiChoice(q, area) {
+  q.options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn reveal';
+    btn.style.animationDelay=(i*0.06)+'s';
+    btn.innerHTML=`<span class="opt-letter">${'ABCD'[i]}</span> ${opt.replace(/^[A-D]\.\s*/,'')}`;
+    btn.onclick=()=>submitAnswer(i,q,btn);
     area.appendChild(btn);
   });
 }
 
-function submitAnswer(idx, q, btn) {
+function submitAnswer(idx,q,btn) {
   if (state.hasAnswered) return;
-  state.hasAnswered = true;
+  state.hasAnswered=true;
   clearTimer();
-  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+  document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
   btn.classList.add('selected');
-  const answerIdx = q.options.findIndex(o => o === q.answer);
-  const correct = idx === answerIdx;
-  if (correct) {
-    btn.classList.add('correct');
-    showResultMsg('Correct! 🎉', true);
-  } else {
-    btn.classList.add('wrong');
-    const correctBtn = document.querySelectorAll('.option-btn')[answerIdx];
-    if (correctBtn) correctBtn.classList.add('correct');
-    showResultMsg('Not quite!', false);
-  }
-  update(ref(db, `rooms/${state.roomCode}/answers/${state.name}`), { optionIndex: idx, timeLeft: state.timeLeft });
+  const answerIdx=q.options.findIndex(o=>o===q.answer);
+  const correct=idx===answerIdx;
+  if (correct) { btn.classList.add('correct'); showResultMsg('Correct! 🎉',true); }
+  else { btn.classList.add('wrong'); const cb=document.querySelectorAll('.option-btn')[answerIdx]; if(cb) cb.classList.add('correct'); showResultMsg('Not quite!',false); }
+  update(ref(db,`rooms/${state.roomCode}/answers/${state.name}`),{optionIndex:idx,timeLeft:state.timeLeft});
 }
 
-window.submitAnagram = function(word) {
+window.submitGuess=function(){
   if (state.hasAnswered) return;
-  const val = document.getElementById('anagram-input')?.value.trim().toUpperCase();
+  const val=document.getElementById('guess-input')?.value;
   if (!val) return;
-  state.hasAnswered = true;
+  state.hasAnswered=true;
   clearTimer();
-  const correct = val === word.toUpperCase();
-  showResultMsg(correct ? 'Correct! Well done! +150 points' : 'Not quite! The answer was: ' + word, correct);
-  update(ref(db, `rooms/${state.roomCode}/answers/${state.name}`), { guess: val });
-  document.getElementById('anagram-input').disabled = true;
+  showResultMsg(`Your guess: ${val} — see the result on the host screen!`,null);
+  update(ref(db,`rooms/${state.roomCode}/guesses/${state.name}`),parseInt(val));
 };
 
-window.submitTot = function(choice, encA, encB) {
-  if (state.hasAnswered) return;
-  state.hasAnswered = true;
-  clearTimer();
-  document.getElementById('tot-a').disabled = true;
-  document.getElementById('tot-b').disabled = true;
-  document.getElementById(choice==='A'?'tot-a':'tot-b').classList.add(choice==='A'?'selected-a':'selected-b');
-  showResultMsg(`You picked ${choice === 'A' ? decodeURIComponent(encA) : decodeURIComponent(encB)}. See who voted what on the big screen!`, null);
-  update(ref(db, `rooms/${state.roomCode}/answers/${state.name}`), { choice });
-};
-
-window.submitGuess = function() {
-  if (state.hasAnswered) return;
-  const val = document.getElementById('guess-input')?.value;
-  if (!val) return;
-  state.hasAnswered = true;
-  clearTimer();
-  showResultMsg(`Your guess: ${val}. The host will reveal the answer!`, null);
-  update(ref(db, `rooms/${state.roomCode}/guesses/${state.name}`), parseInt(val));
-};
-
-function showResultMsg(msg, correct) {
-  const el = document.getElementById('q-result');
-  document.getElementById('q-result-text').textContent = msg;
-  el.style.display = 'block';
-  el.querySelector('.result-card').style.borderColor = correct===true ? 'var(--green)' : correct===false ? 'var(--red)' : 'var(--border)';
+function showResultMsg(msg,correct){
+  const el=document.getElementById('q-result');
+  document.getElementById('q-result-text').textContent=msg;
+  el.style.display='block';
+  document.getElementById('q-result-card').style.borderColor=correct===true?'var(--green)':correct===false?'var(--red)':'var(--border)';
 }
 
-function startTimer(secs) {
-  state.timeLeft = secs;
-  const timerEl = document.getElementById('q-timer');
-  if (timerEl) timerEl.textContent = secs;
+function startTimer(secs){
+  state.timeLeft=secs;
+  const el=document.getElementById('q-timer');
+  if(el) el.textContent=secs;
   clearInterval(state.timerInterval);
-  state.timerInterval = setInterval(() => {
+  state.timerInterval=setInterval(()=>{
     state.timeLeft--;
-    const el = document.getElementById('q-timer');
-    if (el) {
-      el.textContent = state.timeLeft;
-      el.style.color = state.timeLeft <= 5 ? 'var(--red)' : 'var(--accent)';
-    }
-    if (state.timeLeft <= 0) {
-      clearTimer();
-      if (!state.hasAnswered) {
-        state.hasAnswered = true;
-        showResultMsg("Time's up!", false);
-      }
-    }
-  }, 1000);
+    const e=document.getElementById('q-timer');
+    if(e){ e.textContent=state.timeLeft; e.style.color=state.timeLeft<=5?'var(--red)':'var(--accent)'; }
+    if(state.timeLeft<=0){ clearTimer(); if(!state.hasAnswered){ state.hasAnswered=true; showResultMsg("Time's up!",false); }}
+  },1000);
+}
+function clearTimer(){ clearInterval(state.timerInterval); }
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id);
+  if(el) el.classList.add('active');
 }
 
-function clearTimer() { clearInterval(state.timerInterval); }
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(id);
-  if (el) el.classList.add('active');
-}
-window.showScreen = showScreen;
+window.resetToJoin=()=>{
+  state.name=''; state.roomCode=''; state.myScore=0; state.seenQuestion=null;
+  showScreen('screen-join');
+};
 </script>
 </body>
 </html>
