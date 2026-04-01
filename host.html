@@ -125,15 +125,6 @@
   .slider-val { font-family:var(--font-display); font-size:1.4rem; color:var(--accent); min-width:60px; text-align:right; }
 
   @media (max-width:600px) { .options-grid { grid-template-columns:1fr; } .container { padding:1rem; } }
-
-  /* Persistent room code badge */
-  #room-code-badge {
-    display:none; position:fixed; top:1rem; right:1rem; z-index:50;
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:50px; padding:8px 20px; text-align:center;
-  }
-  #room-code-badge .badge-label { font-size:0.65rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:1px; }
-  #room-code-badge .badge-code { font-family:var(--font-display); font-size:1.6rem; color:var(--accent); letter-spacing:4px; line-height:1; }
 </style>
 </head>
 <body>
@@ -385,12 +376,14 @@ async function startNextRound() {
 
   showLoading(`Generating ${round.label} questions...`);
   try {
-    const diffGuide = '';
+    const seed = Math.random().toString(36).substr(2,9);
+    const today = new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const diffGuide = `(Session ID: ${seed}. Today is ${today}. Make sure all questions are completely fresh and different from any previous games.)`;
     const prompt = round.prompt(state.settings.qpr, diffGuide);
     const resp = await fetch("https://api.groq.com/openai/v1/chat/completions",{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},
-      body:JSON.stringify({ model:"llama-3.3-70b-versatile", max_tokens:2000, temperature:0.9, messages:[{role:"user",content:prompt}] })
+      body:JSON.stringify({ model:"llama-3.3-70b-versatile", max_tokens:2000, temperature:1.0, messages:[{role:"system",content:"You are a creative quiz master. Always generate completely fresh, unique questions. Never repeat questions from previous rounds."},{role:"user",content:prompt}] })
     });
     const data = await resp.json();
     const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
@@ -482,8 +475,24 @@ function onGuessesUpdate() {
   const round = ROUNDS[state.currentRound-1];
   if (!round || round.id!=='closest') return;
   Object.entries(state.guesses).forEach(([name,val])=>{
-    const card = document.getElementById(`guess-${name.replace(/\s/g,'_')}`);
-    if (card) { card.classList.add('submitted'); card.querySelector('.guess-val').textContent=val; card.querySelector('.guess-val').style.color='var(--text)'; }
+    const key = name.replace(/\s/g,'_');
+    let card = document.getElementById(`guess-${key}`);
+    // If card doesn't exist yet, create it dynamically
+    if (!card) {
+      const list = document.getElementById('guess-list');
+      if (list) {
+        card = document.createElement('div');
+        card.className = 'guess-card';
+        card.id = `guess-${key}`;
+        card.innerHTML = `<div class="guess-name">${name}</div><div class="guess-val" style="color:var(--muted);">—</div>`;
+        list.appendChild(card);
+      }
+    }
+    if (card) {
+      card.classList.add('submitted');
+      const valEl = card.querySelector('.guess-val');
+      if (valEl) { valEl.textContent = val; valEl.style.color = 'var(--text)'; }
+    }
   });
   updateAdvanceBar();
   checkAutoAdvance();
@@ -504,7 +513,7 @@ function checkAutoAdvance() {
   if (!total) return;
   const round = ROUNDS[state.currentRound-1];
   const answered = round?.id==='closest' ? Object.keys(state.guesses).length : Object.keys(state.answered).length;
-  if (answered >= total) setTimeout(()=>revealAndAdvance(), 1500);
+  if (answered >= total) setTimeout(()=>revealAndAdvance(), 2000);
 }
 
 async function revealAndAdvance() {
@@ -539,7 +548,7 @@ async function revealAndAdvance() {
 
   await update(ref(db,`rooms/${state.roomCode}`),{ scores:state.scores, status:'revealed' });
   renderScores();
-  setTimeout(async()=>{ await showNextQuestion(); }, 3000);
+  setTimeout(async()=>{ await showNextQuestion(); }, 6000);
 }
 
 function showBanner(text) {
@@ -641,13 +650,6 @@ function showScreen(id) {
     if(el) el.style.display=s===id?(s==='screen-round-intro'?'flex':'block'):'none';
   });
   document.getElementById('settings-overlay').classList.remove('open');
-  // Show room code badge on all screens except lobby (lobby shows it prominently already)
-  const badge = document.getElementById('room-code-badge');
-  if (badge) {
-    badge.style.display = id === 'screen-lobby' ? 'none' : 'block';
-    const codeEl = document.getElementById('badge-code-display');
-    if (codeEl) codeEl.textContent = state.roomCode || '------';
-  }
 }
 function showLoading(text){ document.getElementById('loading-text').textContent=text||'Loading...'; document.getElementById('loading').style.display='flex'; }
 function hideLoading(){ document.getElementById('loading').style.display='none'; }
@@ -690,11 +692,5 @@ window.hardReset=async()=>{
 
 init();
 </script>
-
-<!-- Persistent room code badge shown on all non-lobby screens -->
-<div id="room-code-badge">
-  <span class="badge-label">Room code</span>
-  <span class="badge-code" id="badge-code-display">------</span>
-</div>
 </body>
 </html>
