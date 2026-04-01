@@ -376,12 +376,15 @@ async function startNextRound() {
 
   showLoading(`Generating ${round.label} questions...`);
   try {
-    const diffGuide = '';
+    // Inject random seed and date to bust any API caching and ensure unique questions
+    const seed = Math.random().toString(36).substr(2,9);
+    const today = new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const diffGuide = `(Session ID: ${seed}. Today is ${today}. Make sure all questions are fresh and different from any previous games.)`;
     const prompt = round.prompt(state.settings.qpr, diffGuide);
     const resp = await fetch("https://api.groq.com/openai/v1/chat/completions",{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},
-      body:JSON.stringify({ model:"llama-3.3-70b-versatile", max_tokens:2000, temperature:0.9, messages:[{role:"user",content:prompt}] })
+      body:JSON.stringify({ model:"llama-3.3-70b-versatile", max_tokens:2000, temperature:1.0, messages:[{role:"system",content:"You are a creative quiz master. Always generate completely fresh, unique questions that have never been asked before. Never repeat questions."},{role:"user",content:prompt}] })
     });
     const data = await resp.json();
     const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
