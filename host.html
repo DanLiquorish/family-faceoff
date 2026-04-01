@@ -7,243 +7,150 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0e17;
-    --surface: #1a1927;
-    --surface2: #232235;
-    --accent: #ff6b35;
-    --accent2: #f7c59f;
-    --purple: #a78bfa;
-    --teal: #2dd4bf;
-    --yellow: #fbbf24;
-    --green: #34d399;
-    --red: #f87171;
-    --text: #fffffe;
-    --muted: #a7a9be;
-    --border: rgba(255,255,255,0.08);
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
+    --bg: #0f0e17; --surface: #1a1927; --surface2: #232235;
+    --accent: #ff6b35; --accent2: #f7c59f; --purple: #a78bfa;
+    --teal: #2dd4bf; --yellow: #fbbf24; --green: #34d399; --red: #f87171;
+    --text: #fffffe; --muted: #a7a9be; --border: rgba(255,255,255,0.08);
+    --font-display: 'Bebas Neue', sans-serif; --font-body: 'DM Sans', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image: radial-gradient(circle at 20% 20%, rgba(167,139,250,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,107,53,0.08) 0%, transparent 50%); pointer-events:none; z-index:0; }
+  .container { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:2rem; }
+  .logo { font-family:var(--font-display); font-size:clamp(3rem,8vw,7rem); letter-spacing:2px; line-height:1; }
+  .logo span { color:var(--accent); }
+  .btn { font-family:var(--font-body); font-weight:600; padding:14px 32px; border-radius:50px; border:none; cursor:pointer; font-size:1rem; transition:all 0.2s; }
+  .btn-primary { background:var(--accent); color:white; }
+  .btn-primary:hover { background:#e55a27; transform:translateY(-2px); }
+  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+  .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+  .btn-outline:hover { background:var(--surface); }
+  .spinner { width:48px; height:48px; border:4px solid var(--surface2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #loading { display:none; position:fixed; inset:0; background:rgba(15,14,23,0.85); z-index:100; align-items:center; justify-content:center; flex-direction:column; gap:1rem; }
+  #loading p { color:var(--muted); font-size:1rem; }
+  .reveal { animation:reveal 0.4s ease; }
+  @keyframes reveal { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 
-  /* Animated bg dots */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: radial-gradient(circle at 20% 20%, rgba(167,139,250,0.08) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 80%, rgba(255,107,53,0.08) 0%, transparent 50%);
-    pointer-events: none; z-index: 0;
-  }
+  /* LOBBY */
+  #screen-lobby { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; }
+  .room-code-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem 3rem; margin-bottom:2rem; }
+  .room-label { font-size:0.85rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem; }
+  .room-code { font-family:var(--font-display); font-size:clamp(3rem,10vw,5.5rem); color:var(--accent); letter-spacing:8px; }
+  .join-url { color:var(--muted); font-size:0.9rem; margin-top:0.75rem; }
+  .join-url strong { color:var(--accent2); }
+  .players-grid { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:1.5rem 0; max-width:700px; }
+  .player-chip { background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:10px 20px; display:flex; align-items:center; gap:10px; animation:chipIn 0.3s ease; }
+  @keyframes chipIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+  .avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; }
+  .player-count { font-family:var(--font-display); font-size:1.5rem; color:var(--purple); margin-bottom:0.25rem; }
 
-  .container { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  /* ROUND INTRO */
+  #screen-round-intro { display:none; align-items:center; justify-content:center; min-height:100vh; text-align:center; flex-direction:column; }
+  .round-intro-num { font-family:var(--font-display); font-size:8rem; color:var(--accent); line-height:1; }
+  .round-intro-title { font-family:var(--font-display); font-size:3rem; color:var(--text); margin-bottom:1rem; }
+  .round-intro-desc { color:var(--muted); font-size:1.1rem; max-width:500px; }
+  .round-intro-icon { font-size:4rem; margin-bottom:1rem; }
 
-  /* LOBBY SCREEN */
-  #screen-lobby { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
-  .logo { font-family: var(--font-display); font-size: clamp(3rem, 8vw, 7rem); letter-spacing: 2px; line-height: 1; }
-  .logo span { color: var(--accent); }
-  .tagline { color: var(--muted); margin: 0.5rem 0 2.5rem; font-size: 1.1rem; }
-  .room-code-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 3rem; margin-bottom: 2rem; }
-  .room-label { font-size: 0.85rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
-  .room-code { font-family: var(--font-display); font-size: clamp(3rem, 10vw, 5.5rem); color: var(--accent); letter-spacing: 8px; }
-  .join-url { color: var(--muted); font-size: 0.9rem; margin-top: 0.75rem; }
-  .join-url strong { color: var(--accent2); }
-  .players-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 1.5rem 0; max-width: 700px; }
-  .player-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 10px 20px; display: flex; align-items: center; gap: 10px; animation: chipIn 0.3s ease; }
-  @keyframes chipIn { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
-  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
-  .waiting-text { color: var(--muted); font-size: 0.95rem; margin: 0.5rem 0; }
-  .btn { font-family: var(--font-body); font-weight: 600; padding: 14px 32px; border-radius: 50px; border: none; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: #e55a27; transform: translateY(-2px); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-outline:hover { background: var(--surface); }
-  .player-count { font-family: var(--font-display); font-size: 1.5rem; color: var(--purple); margin-bottom: 0.25rem; }
+  /* GAME */
+  #screen-game { display:none; }
+  .round-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+  .round-label { font-family:var(--font-display); font-size:1.8rem; color:var(--muted); }
+  .q-progress { font-family:var(--font-display); font-size:1.2rem; color:var(--purple); }
+  .game-type-badge { background:var(--surface2); border:1px solid var(--border); border-radius:50px; padding:6px 20px; font-size:0.9rem; font-weight:600; color:var(--accent2); }
+  .timer-wrap { position:relative; width:80px; height:80px; }
+  .timer-svg { transform:rotate(-90deg); }
+  .timer-track { fill:none; stroke:var(--surface2); stroke-width:6; }
+  .timer-fill { fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke 0.5s; }
+  .timer-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:1.8rem; }
+  .question-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2.5rem; margin-bottom:1.5rem; }
+  .question-text { font-size:clamp(1.3rem,3vw,2rem); font-weight:600; line-height:1.3; margin-bottom:1.5rem; }
+  .options-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .option-card { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:1rem 1.25rem; display:flex; align-items:center; gap:12px; transition:all 0.3s; }
+  .option-card.correct { background:rgba(52,211,153,0.15); border-color:var(--green); }
+  .option-card.wrong { background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); opacity:0.6; }
+  .option-letter { font-family:var(--font-display); font-size:1.4rem; color:var(--muted); min-width:24px; }
+  .option-votes { margin-left:auto; font-size:0.85rem; color:var(--muted); }
+  .result-banner { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:1rem 1.5rem; margin-top:1rem; font-size:0.95rem; color:var(--accent2); display:none; }
+  .scores-panel { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:1.5rem; }
+  .scores-title { font-family:var(--font-display); font-size:1.4rem; color:var(--muted); margin-bottom:1rem; letter-spacing:1px; }
+  .score-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .score-name { min-width:100px; font-weight:500; font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .score-bar-wrap { flex:1; background:var(--surface2); border-radius:4px; height:8px; overflow:hidden; }
+  .score-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
+  .score-pts { font-family:var(--font-display); font-size:1.2rem; min-width:50px; text-align:right; }
 
-  /* ROUND SCREEN */
-  #screen-game { display: none; }
-  .round-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-  .round-label { font-family: var(--font-display); font-size: 1.8rem; color: var(--muted); }
-  .game-type-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 50px; padding: 6px 20px; font-size: 0.9rem; font-weight: 600; color: var(--accent2); }
-  .timer-wrap { position: relative; width: 80px; height: 80px; }
-  .timer-svg { transform: rotate(-90deg); }
-  .timer-track { fill: none; stroke: var(--surface2); stroke-width: 6; }
-  .timer-fill { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
-  .timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1.8rem; }
+  /* LANDMARK IMAGE */
+  .landmark-img-wrap { width:100%; max-height:280px; border-radius:14px; overflow:hidden; margin-bottom:1.5rem; background:var(--surface2); display:flex; align-items:center; justify-content:center; min-height:180px; }
+  .landmark-img-wrap img { width:100%; max-height:280px; object-fit:cover; border-radius:14px; }
+  .landmark-loading { color:var(--muted); font-size:0.9rem; }
 
-  .question-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; margin-bottom: 1.5rem; }
-  .question-text { font-size: clamp(1.3rem, 3vw, 2rem); font-weight: 600; line-height: 1.3; margin-bottom: 1.5rem; }
-  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .option-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px; transition: all 0.3s; }
-  .option-card.correct { background: rgba(52,211,153,0.15); border-color: var(--green); }
-  .option-card.wrong { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); opacity: 0.6; }
-  .option-letter { font-family: var(--font-display); font-size: 1.4rem; color: var(--muted); min-width: 24px; }
-  .option-text { font-size: 1rem; font-weight: 500; }
-  .option-votes { margin-left: auto; font-size: 0.85rem; color: var(--muted); }
+  /* CLOSEST */
+  .guess-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+  .guess-card { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:1rem; text-align:center; transition:all 0.4s; }
+  .guess-card.winner { background:rgba(52,211,153,0.15); border-color:var(--green); }
+  .guess-card.submitted { border-color:var(--purple); }
+  .guess-name { font-size:0.8rem; color:var(--muted); margin-bottom:4px; }
+  .guess-val { font-family:var(--font-display); font-size:2rem; }
+  .guess-diff { font-size:0.8rem; color:var(--muted); margin-top:4px; }
 
-  /* Anagram display */
-  .anagram-letters { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
-  .anagram-tile { background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; width: 56px; height: 64px; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 2rem; color: var(--accent2); }
-
-  /* Closest number */
-  .guess-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-  .guess-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; text-align: center; transition: all 0.4s; }
-  .guess-card.winner { background: rgba(52,211,153,0.15); border-color: var(--green); }
-  .guess-card.submitted { border-color: var(--purple); }
-  .guess-name { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
-  .guess-val { font-family: var(--font-display); font-size: 2rem; }
-  .guess-diff { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
-
-  /* This or That */
-  .tot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .tot-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; text-align: center; }
-  .tot-label { font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
-  .tot-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
-  .tot-bar-wrap { background: var(--surface); border-radius: 6px; height: 8px; overflow: hidden; }
-  .tot-bar { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
-  .tot-count { font-family: var(--font-display); font-size: 2.5rem; margin-top: 0.5rem; }
-
-  /* SCORES PANEL */
-  .scores-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; }
-  .scores-title { font-family: var(--font-display); font-size: 1.4rem; color: var(--muted); margin-bottom: 1rem; letter-spacing: 1px; }
-  .score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .score-name { min-width: 100px; font-weight: 500; font-size: 0.9rem; }
-  .score-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
-  .score-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-  .score-pts { font-family: var(--font-display); font-size: 1.2rem; min-width: 50px; text-align: right; }
-
-  /* RESULT BANNER */
-  .result-banner { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.5rem; margin-top: 1rem; font-size: 0.95rem; color: var(--accent2); display: none; }
+  /* AUTO-ADVANCE BAR */
+  .advance-bar-wrap { height:4px; background:var(--surface2); border-radius:2px; margin-top:1rem; overflow:hidden; }
+  .advance-bar { height:100%; background:var(--green); border-radius:2px; transition:width 0.5s ease; }
 
   /* GAME OVER */
-  #screen-gameover { display: none; text-align: center; }
-  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 16px; margin: 2rem 0; }
-  .podium-place { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .podium-block { border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 2rem; }
-  .podium-avatar { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; border: 3px solid transparent; }
-  .podium-name { font-weight: 600; font-size: 0.9rem; }
-  .podium-pts { color: var(--muted); font-size: 0.8rem; }
+  #screen-gameover { display:none; text-align:center; }
+  .podium { display:flex; align-items:flex-end; justify-content:center; gap:16px; margin:2rem 0; }
+  .podium-place { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .podium-block { border-radius:12px 12px 0 0; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:2rem; }
+  .podium-avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600; border:3px solid transparent; }
+  .podium-name { font-weight:600; font-size:0.9rem; }
+  .podium-pts { color:var(--muted); font-size:0.8rem; }
 
-  /* LOADING */
-  #loading { display: none; position: fixed; inset: 0; background: rgba(15,14,23,0.85); z-index: 100; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
-  .spinner { width: 48px; height: 48px; border: 4px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loading p { color: var(--muted); font-size: 1rem; }
+  /* LEADERBOARD */
+  #screen-leaderboard { display:none; }
+  .lb-row { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid var(--border); }
+  .lb-rank { font-family:var(--font-display); font-size:2rem; width:40px; color:var(--muted); }
+  .lb-stat { text-align:right; }
+  .lb-stat-val { font-family:var(--font-display); font-size:1.5rem; }
+  .lb-stat-label { font-size:0.75rem; color:var(--muted); }
 
-  /* UTIL */
-  .hidden { display: none !important; }
-  .flex-center { display: flex; align-items: center; justify-content: center; }
-  .gap-1 { gap: 1rem; }
-  .mt-1 { margin-top: 1rem; }
-  .reveal { animation: reveal 0.4s ease; }
-  @keyframes reveal { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
-
-  /* LEADERBOARD SCREEN */
-  #screen-leaderboard { display: none; }
-  .lb-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
-  .lb-rank { font-family: var(--font-display); font-size: 2rem; width: 40px; color: var(--muted); }
-  .lb-stat { text-align: right; }
-  .lb-stat-val { font-family: var(--font-display); font-size: 1.5rem; }
-  .lb-stat-label { font-size: 0.75rem; color: var(--muted); }
-
-  /* SETTINGS PANEL */
+  /* SETTINGS */
   #settings-overlay { display:none; position:fixed; inset:0; background:rgba(10,9,20,0.75); z-index:200; align-items:center; justify-content:center; padding:1rem; }
   #settings-overlay.open { display:flex; }
-  .settings-panel { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:2rem; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; animation:slideUp 0.25s ease; }
+  .settings-panel { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:2rem; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; animation:slideUp 0.25s ease; }
   @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-  .settings-title { font-family:var(--font-display); font-size:2rem; margin-bottom:1.75rem; display:flex; align-items:center; justify-content:space-between; }
-  .settings-close { background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; line-height:1; padding:4px 8px; border-radius:8px; }
+  .settings-title { font-family:var(--font-display); font-size:2rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; }
+  .settings-close { background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; padding:4px 8px; border-radius:8px; }
   .settings-close:hover { color:var(--text); background:var(--surface2); }
-  .settings-section { margin-bottom:1.75rem; }
+  .settings-section { margin-bottom:1.5rem; }
   .settings-label { font-size:0.75rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:0.75rem; display:block; }
   .pill-group { display:flex; gap:8px; flex-wrap:wrap; }
   .pill { background:var(--surface2); border:1px solid var(--border); border-radius:50px; padding:10px 20px; font-family:var(--font-body); font-size:0.9rem; font-weight:500; color:var(--muted); cursor:pointer; transition:all 0.15s; }
   .pill.active { background:rgba(255,107,53,0.2); border-color:var(--accent); color:var(--accent); }
-  .pill:hover:not(.active) { border-color:rgba(255,255,255,0.2); color:var(--text); }
-  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
-  .toggle-row:last-child { border-bottom:none; }
-  .toggle-info { flex:1; }
-  .toggle-name { font-weight:500; font-size:0.95rem; }
-  .toggle-desc { font-size:0.8rem; color:var(--muted); margin-top:2px; }
-  .toggle { position:relative; width:44px; height:24px; flex-shrink:0; }
-  .toggle input { opacity:0; width:0; height:0; }
-  .toggle-track { position:absolute; inset:0; background:var(--surface2); border:1px solid var(--border); border-radius:24px; cursor:pointer; transition:all 0.2s; }
-  .toggle input:checked + .toggle-track { background:var(--accent); border-color:var(--accent); }
-  .toggle-track::after { content:''; position:absolute; left:3px; top:3px; width:16px; height:16px; background:var(--muted); border-radius:50%; transition:all 0.2s; }
-  .toggle input:checked + .toggle-track::after { transform:translateX(20px); background:white; }
   .slider-row { display:flex; align-items:center; gap:16px; }
   .slider-row input[type=range] { flex:1; -webkit-appearance:none; height:4px; background:var(--surface2); border-radius:4px; outline:none; }
   .slider-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; background:var(--accent); border-radius:50%; cursor:pointer; }
   .slider-val { font-family:var(--font-display); font-size:1.4rem; color:var(--accent); min-width:60px; text-align:right; }
-  .topic-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .topic-pill { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px 14px; font-family:var(--font-body); font-size:0.85rem; font-weight:500; color:var(--muted); cursor:pointer; transition:all 0.15s; text-align:center; }
-  .topic-pill.active { background:rgba(167,139,250,0.2); border-color:var(--purple); color:var(--purple); }
-  .topic-pill:hover:not(.active) { border-color:rgba(255,255,255,0.2); color:var(--text); }
-  .settings-save { width:100%; padding:14px; margin-top:0.5rem; }
 
-  @media (max-width: 600px) {
-    .options-grid, .tot-grid { grid-template-columns: 1fr; }
-    .container { padding: 1rem; }
-  }
+  @media (max-width:600px) { .options-grid { grid-template-columns:1fr; } .container { padding:1rem; } }
 </style>
 </head>
 <body>
 
-<div id="loading"><div class="spinner"></div><p id="loading-text">Generating question...</p></div>
+<div id="loading"><div class="spinner"></div><p id="loading-text">Loading...</p></div>
 
-<!-- ===== SETTINGS OVERLAY ===== -->
+<!-- SETTINGS -->
 <div id="settings-overlay">
   <div class="settings-panel">
-    <div class="settings-title">
-      SETTINGS
-      <button class="settings-close" onclick="closeSettings()">✕</button>
-    </div>
-
-    <!-- Rounds -->
+    <div class="settings-title">SETTINGS <button class="settings-close" onclick="closeSettings()">✕</button></div>
     <div class="settings-section">
-      <span class="settings-label">Number of rounds</span>
+      <span class="settings-label">Questions per round</span>
       <div class="slider-row">
-        <input type="range" min="1" max="15" value="5" id="setting-rounds" oninput="document.getElementById('rounds-val').textContent=this.value+' rounds'" step="1" />
-        <div class="slider-val" id="rounds-val">5 rounds</div>
+        <input type="range" min="3" max="10" value="5" step="1" id="setting-qpr" oninput="document.getElementById('qpr-val').textContent=this.value" />
+        <div class="slider-val" id="qpr-val">5</div>
       </div>
     </div>
-
-    <!-- Mini-games -->
-    <div class="settings-section">
-      <span class="settings-label">Mini-games included</span>
-      <div id="game-toggles">
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <div class="toggle-name">🧠 Trivia</div>
-            <div class="toggle-desc">Multiple choice — faster = more points</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="tog-trivia" checked><div class="toggle-track"></div></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <div class="toggle-name">🔤 Anagram</div>
-            <div class="toggle-desc">Unscramble the word before time runs out</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="tog-anagram" checked><div class="toggle-track"></div></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <div class="toggle-name">🎯 This or That</div>
-            <div class="toggle-desc">Pick a side — match the majority to score</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="tog-thisorthat" checked><div class="toggle-track"></div></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <div class="toggle-name">🔢 Closest Number</div>
-            <div class="toggle-desc">Guess the number — closest wins big points</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="tog-closest" checked><div class="toggle-track"></div></label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Timer -->
     <div class="settings-section">
       <span class="settings-label">Timer speed</span>
       <div class="pill-group" id="timer-pills">
@@ -251,76 +158,56 @@
         <button class="pill active" data-speed="normal" onclick="setTimerSpeed(this)">⚡ Normal</button>
         <button class="pill" data-speed="fast" onclick="setTimerSpeed(this)">🔥 Fast</button>
       </div>
-      <p style="font-size:0.8rem;color:var(--muted);margin-top:0.6rem;" id="timer-desc">Trivia: 20s · Anagram: 30s · Closest: 45s</p>
+      <p style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;" id="timer-desc">20s per question</p>
     </div>
-
-    <!-- Difficulty -->
-    <div class="settings-section">
-      <span class="settings-label">Question difficulty</span>
-      <div class="pill-group" id="diff-pills">
-        <button class="pill" data-diff="easy" onclick="setDiff(this)">🌱 Easy</button>
-        <button class="pill active" data-diff="medium" onclick="setDiff(this)">🎯 Medium</button>
-        <button class="pill" data-diff="hard" onclick="setDiff(this)">🧨 Hard</button>
-      </div>
-    </div>
-
-    <!-- Topics -->
-    <div class="settings-section">
-      <span class="settings-label">Trivia topics (pick any)</span>
-      <div class="topic-grid" id="topic-grid">
-        <button class="topic-pill active" data-topic="general" onclick="toggleTopic(this)">🌍 General knowledge</button>
-        <button class="topic-pill active" data-topic="science" onclick="toggleTopic(this)">🔬 Science</button>
-        <button class="topic-pill active" data-topic="history" onclick="toggleTopic(this)">📜 History</button>
-        <button class="topic-pill active" data-topic="sport" onclick="toggleTopic(this)">⚽ Sport</button>
-        <button class="topic-pill" data-topic="music" onclick="toggleTopic(this)">🎵 Music</button>
-        <button class="topic-pill" data-topic="film" onclick="toggleTopic(this)">🎬 Film & TV</button>
-        <button class="topic-pill" data-topic="food" onclick="toggleTopic(this)">🍕 Food & drink</button>
-        <button class="topic-pill" data-topic="geography" onclick="toggleTopic(this)">🗺️ Geography</button>
-      </div>
-    </div>
-
-    <button class="btn btn-primary settings-save" onclick="saveSettings()">Save settings</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="saveSettings()">Save settings</button>
   </div>
 </div>
 
-<!-- ===== LOBBY ===== -->
+<!-- LOBBY -->
 <div id="screen-lobby" class="container">
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;">
     <div class="logo">FAMILY<span>FACEOFF</span></div>
-    <p class="tagline">Multi-device family game night — powered by AI</p>
-
+    <p style="color:var(--muted);margin:0.5rem 0 2rem;font-size:1.1rem;">6 rounds · 5 questions each · AI generated</p>
     <div class="room-code-box">
-      <p class="room-label">Join at</p>
-      <p class="join-url">Open <strong id="player-url">player.html</strong> and enter code:</p>
+      <p class="room-label">Players open player.html and enter:</p>
       <p class="room-code" id="room-code-display">------</p>
     </div>
-
     <div id="lobby-players" class="players-grid"></div>
-    <p class="waiting-text" id="waiting-text">Waiting for players to join...</p>
+    <p style="color:var(--muted);font-size:0.95rem;margin:0.5rem 0;" id="waiting-text">Waiting for players to join...</p>
     <p class="player-count" id="player-count-text">0 players</p>
-
     <div style="display:flex;gap:12px;margin-top:1.5rem;flex-wrap:wrap;justify-content:center;">
       <button class="btn btn-primary" id="start-btn" onclick="hostStartGame()" disabled>Start game</button>
       <button class="btn btn-outline" onclick="openSettings()">⚙ Settings</button>
       <button class="btn btn-outline" onclick="showLeaderboard()">Leaderboard</button>
     </div>
+    <div id="settings-summary" style="margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;"></div>
+  </div>
+</div>
 
-    <div style="margin-top:2rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 2rem;max-width:480px;">
-      <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">
-        <strong style="color:var(--accent2);">Setup:</strong> Replace <code style="color:var(--purple);">FIREBASE_CONFIG</code> at the bottom of both HTML files with your Firebase config. Host both files on GitHub Pages. Players open <strong>player.html</strong> on their phones.
-      </p>
+<!-- ROUND INTRO -->
+<div id="screen-round-intro" class="container">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;">
+    <div class="round-intro-icon" id="intro-icon">🧠</div>
+    <div class="round-intro-num" id="intro-round-num">ROUND 1</div>
+    <div class="round-intro-title" id="intro-title">GENERAL KNOWLEDGE</div>
+    <p class="round-intro-desc" id="intro-desc">5 questions on general knowledge topics</p>
+    <div style="margin-top:2rem;">
+      <div class="spinner"></div>
+      <p style="color:var(--muted);margin-top:1rem;font-size:0.9rem;">Generating questions...</p>
     </div>
   </div>
 </div>
 
-<!-- ===== GAME ===== -->
+<!-- GAME -->
 <div id="screen-game" class="container" style="padding-top:1.5rem;">
   <div class="round-header">
     <div>
-      <div class="round-label" id="round-label">ROUND 1 / 5</div>
-      <div class="game-type-badge" id="game-type-badge">Trivia</div>
+      <div class="round-label" id="round-label">ROUND 1</div>
+      <div class="game-type-badge" id="game-type-badge">General Knowledge</div>
     </div>
-    <div id="timer-wrap" class="timer-wrap">
+    <div class="q-progress" id="q-progress">Q 1/5</div>
+    <div class="timer-wrap">
       <svg class="timer-svg" width="80" height="80" viewBox="0 0 80 80">
         <circle class="timer-track" cx="40" cy="40" r="34"/>
         <circle class="timer-fill" id="timer-circle" cx="40" cy="40" r="34" stroke-dasharray="213.6" stroke-dashoffset="0"/>
@@ -328,17 +215,12 @@
       <div class="timer-num" id="timer-num">20</div>
     </div>
   </div>
-
-  <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;" id="game-layout">
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;">
     <div>
       <div class="question-card">
         <div id="question-area"></div>
-        <div class="result-banner reveal" id="result-banner"></div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:0.75rem;">
-        <button class="btn btn-outline" onclick="skipToResults()" id="reveal-btn" style="display:none;">Reveal answer</button>
-        <button class="btn btn-primary" onclick="nextRound()" id="next-btn" style="display:none;">Next round →</button>
-        <button class="btn btn-outline" onclick="endGame()" id="end-btn" style="display:none;font-size:0.85rem;">End game</button>
+        <div class="result-banner" id="result-banner"></div>
+        <div class="advance-bar-wrap"><div class="advance-bar" id="advance-bar" style="width:0%"></div></div>
       </div>
     </div>
     <div class="scores-panel">
@@ -348,7 +230,7 @@
   </div>
 </div>
 
-<!-- ===== GAME OVER ===== -->
+<!-- GAME OVER -->
 <div id="screen-gameover" class="container" style="padding-top:2rem;">
   <div class="logo" style="text-align:center;">GAME<span>OVER</span></div>
   <div class="podium" id="podium"></div>
@@ -360,7 +242,7 @@
   </div>
 </div>
 
-<!-- ===== LEADERBOARD ===== -->
+<!-- LEADERBOARD -->
 <div id="screen-leaderboard" class="container" style="padding-top:2rem;">
   <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;">
     <button class="btn btn-outline" onclick="backToLobby()" style="padding:10px 20px;">← Back</button>
@@ -375,14 +257,10 @@
   <div id="lb-list"></div>
 </div>
 
-<!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, update, remove, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// =============================================
-// PASTE YOUR FIREBASE CONFIG HERE
-// =============================================
 const firebaseConfig = {
   apiKey: "AIzaSyAZSgZ_Csfb6ui_8R1XdzOX1Tj7Iz1o6-I",
   authDomain: "family-faceoff-8ad0b.firebaseapp.com",
@@ -392,18 +270,26 @@ const firebaseConfig = {
   messagingSenderId: "123359290040",
   appId: "1:123359290040:web:3d1d30af10f29328e6ca4d"
 };
-// =============================================
+
+const GROQ_KEY = "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";
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const COLORS = [
-  {bg:'#a78bfa',text:'#1a0040'},
-  {bg:'#ff6b35',text:'#2a1000'},
-  {bg:'#2dd4bf',text:'#002a26'},
-  {bg:'#fbbf24',text:'#2a1a00'},
-  {bg:'#34d399',text:'#00270f'},
-  {bg:'#f472b6',text:'#2a0020'},
+  {bg:'#a78bfa',text:'#1a0040'},{bg:'#ff6b35',text:'#2a1000'},
+  {bg:'#2dd4bf',text:'#002a26'},{bg:'#fbbf24',text:'#2a1a00'},
+  {bg:'#34d399',text:'#00270f'},{bg:'#f472b6',text:'#2a0020'},
+];
+
+// Round definitions
+const ROUNDS = [
+  { id:'general',    label:'General Knowledge', icon:'🧠', desc:'General knowledge questions for everyone', color:'#a78bfa' },
+  { id:'sport',      label:'Sport',             icon:'⚽', desc:'Questions about sport from around the world', color:'#ff6b35' },
+  { id:'music',      label:'Music',             icon:'🎵', desc:'Questions about songs, artists and albums', color:'#2dd4bf' },
+  { id:'closest',    label:'Closest Number',    icon:'🔢', desc:'Guess the number — closest player wins!', color:'#fbbf24' },
+  { id:'landmark',   label:'Where In The World',icon:'🌍', desc:'Guess the location from a photo', color:'#34d399' },
+  { id:'history',    label:'Recent History',    icon:'📰', desc:'Big events from the last few years', color:'#f472b6' },
 ];
 
 let state = {
@@ -411,164 +297,45 @@ let state = {
   players: {},
   scores: {},
   currentRound: 0,
-  totalRounds: 5,
-  gameTypes: ['trivia','anagram','thisorthat','closest'],
-  currentQuestion: null,
-  currentType: null,
+  currentQuestion: 0,
+  questionsPerRound: 5,
+  questions: [],
   timerInterval: null,
+  advanceInterval: null,
   timeLeft: 0,
   answered: {},
   guesses: {},
   revealed: false,
   lbTab: 'wins',
-  settings: {
-    rounds: 5,
-    gameTypes: ['trivia','anagram','thisorthat','closest'],
-    timerSpeed: 'normal',
-    difficulty: 'medium',
-    topics: ['general','science','history','sport']
-  }
+  settings: { qpr: 5, timerSpeed: 'normal' }
 };
 
-// ---- SETTINGS FUNCTIONS ----
-function openSettings() {
-  const s = state.settings;
-  document.getElementById('setting-rounds').value = s.rounds;
-  document.getElementById('rounds-val').textContent = s.rounds + ' rounds';
-  ['trivia','anagram','thisorthat','closest'].forEach(t => {
-    document.getElementById('tog-'+t).checked = s.gameTypes.includes(t);
-  });
-  document.querySelectorAll('#timer-pills .pill').forEach(p => p.classList.toggle('active', p.dataset.speed === s.timerSpeed));
-  document.querySelectorAll('#diff-pills .pill').forEach(p => p.classList.toggle('active', p.dataset.diff === s.difficulty));
-  document.querySelectorAll('#topic-grid .topic-pill').forEach(p => p.classList.toggle('active', s.topics.includes(p.dataset.topic)));
-  updateTimerDesc(s.timerSpeed);
-  document.getElementById('settings-overlay').classList.add('open');
-}
-window.openSettings = openSettings;
-
-function closeSettings() {
-  document.getElementById('settings-overlay').classList.remove('open');
-}
-window.closeSettings = closeSettings;
-
-function setTimerSpeed(btn) {
-  document.querySelectorAll('#timer-pills .pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  updateTimerDesc(btn.dataset.speed);
-}
-window.setTimerSpeed = setTimerSpeed;
-
-function updateTimerDesc(speed) {
-  const times = {
-    relaxed: 'Trivia: 30s · Anagram: 45s · Closest: 60s',
-    normal:  'Trivia: 20s · Anagram: 30s · Closest: 45s',
-    fast:    'Trivia: 12s · Anagram: 20s · Closest: 25s'
-  };
-  document.getElementById('timer-desc').textContent = times[speed] || times.normal;
-}
-
-function setDiff(btn) {
-  document.querySelectorAll('#diff-pills .pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-}
-window.setDiff = setDiff;
-
-function toggleTopic(btn) {
-  const active = document.querySelectorAll('#topic-grid .topic-pill.active');
-  if (btn.classList.contains('active') && active.length <= 1) return; // keep at least one
-  btn.classList.toggle('active');
-}
-window.toggleTopic = toggleTopic;
-
-function saveSettings() {
-  const rounds = parseInt(document.getElementById('setting-rounds').value);
-  const gameTypes = ['trivia','anagram','thisorthat','closest'].filter(t => document.getElementById('tog-'+t).checked);
-  if (gameTypes.length === 0) { alert('Please enable at least one mini-game!'); return; }
-  const timerSpeed = document.querySelector('#timer-pills .pill.active')?.dataset.speed || 'normal';
-  const difficulty = document.querySelector('#diff-pills .pill.active')?.dataset.diff || 'medium';
-  const topics = [...document.querySelectorAll('#topic-grid .topic-pill.active')].map(p => p.dataset.topic);
-
-  state.settings = { rounds, gameTypes, timerSpeed, difficulty, topics };
-  state.totalRounds = rounds;
-  state.gameTypes = gameTypes;
-
-  // Show summary badge in lobby
-  renderSettingsSummary();
-  closeSettings();
-}
-window.saveSettings = saveSettings;
-
-function renderSettingsSummary() {
-  const s = state.settings;
-  const speedLabel = {relaxed:'😌 Relaxed',normal:'⚡ Normal',fast:'🔥 Fast'}[s.timerSpeed];
-  const diffLabel = {easy:'🌱 Easy',medium:'🎯 Medium',hard:'🧨 Hard'}[s.difficulty];
-  let el = document.getElementById('settings-summary');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'settings-summary';
-    el.style.cssText = 'margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;';
-    document.getElementById('start-btn').parentElement.insertAdjacentElement('afterend', el);
-  }
-  el.innerHTML = [
-    `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:5px 14px;font-size:0.8rem;color:var(--accent2);">${s.rounds} rounds</span>`,
-    `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:5px 14px;font-size:0.8rem;color:var(--accent2);">${speedLabel}</span>`,
-    `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:5px 14px;font-size:0.8rem;color:var(--accent2);">${diffLabel}</span>`,
-    `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:5px 14px;font-size:0.8rem;color:var(--accent2);">${s.gameTypes.length} game types</span>`,
-  ].join('');
-}
-
-function getTimerSecs(type) {
-  const speed = state.settings.timerSpeed || 'normal';
+function getTimerSecs(roundId) {
+  const speed = state.settings.timerSpeed;
   const map = {
-    relaxed: {trivia:30, anagram:45, thisorthat:30, closest:60},
-    normal:  {trivia:20, anagram:30, thisorthat:20, closest:45},
-    fast:    {trivia:12, anagram:20, thisorthat:12, closest:25}
+    relaxed: { general:30, sport:30, music:30, closest:45, landmark:40, history:30 },
+    normal:  { general:20, sport:20, music:20, closest:35, landmark:30, history:20 },
+    fast:    { general:12, sport:12, music:12, closest:20, landmark:20, history:12 },
   };
-  return (map[speed] || map.normal)[type] || 20;
+  return (map[speed]||map.normal)[roundId] || 20;
 }
 
-// Generate room code and set up listeners
 async function init() {
   state.roomCode = Math.random().toString(36).substr(2,5).toUpperCase();
   document.getElementById('room-code-display').textContent = state.roomCode;
-
-  // Set game state in Firebase
-  await set(ref(db, `rooms/${state.roomCode}`), {
-    status: 'lobby',
-    round: 0,
-    totalRounds: state.totalRounds
-  });
-
-  // Listen for players joining
-  onValue(ref(db, `rooms/${state.roomCode}/players`), snap => {
-    state.players = snap.val() || {};
-    renderLobbyPlayers();
-  });
-
-  // Listen for answers in current round
-  onValue(ref(db, `rooms/${state.roomCode}/answers`), snap => {
-    state.answered = snap.val() || {};
-    renderAnswerProgress();
-  });
-
-  // Listen for guesses (closest number)
-  onValue(ref(db, `rooms/${state.roomCode}/guesses`), snap => {
-    state.guesses = snap.val() || {};
-    renderGuesses();
-  });
+  await set(ref(db, `rooms/${state.roomCode}`), { status:'lobby', round:0 });
+  onValue(ref(db, `rooms/${state.roomCode}/players`), snap => { state.players = snap.val()||{}; renderLobbyPlayers(); });
+  onValue(ref(db, `rooms/${state.roomCode}/answers`), snap => { state.answered = snap.val()||{}; onAnswersUpdate(); });
+  onValue(ref(db, `rooms/${state.roomCode}/guesses`), snap => { state.guesses = snap.val()||{}; onGuessesUpdate(); });
 }
 
 function renderLobbyPlayers() {
-  const el = document.getElementById('lobby-players');
   const players = Object.values(state.players);
-  el.innerHTML = players.map((p,i) => {
-    const c = COLORS[i % COLORS.length];
-    return `<div class="player-chip">
-      <div class="avatar" style="background:${c.bg};color:${c.text};">${p.name[0].toUpperCase()}</div>
-      <span style="font-weight:500;">${p.name}</span>
-    </div>`;
+  document.getElementById('lobby-players').innerHTML = players.map((p,i) => {
+    const c = COLORS[i%COLORS.length];
+    return `<div class="player-chip"><div class="avatar" style="background:${c.bg};color:${c.text};">${p.name[0].toUpperCase()}</div><span style="font-weight:500;">${p.name}</span></div>`;
   }).join('');
-  document.getElementById('player-count-text').textContent = players.length + ' player' + (players.length===1?'':'s');
+  document.getElementById('player-count-text').textContent = players.length + ' player'+(players.length===1?'':'s');
   document.getElementById('start-btn').disabled = players.length < 1;
   document.getElementById('waiting-text').textContent = players.length > 0 ? 'Ready to go!' : 'Waiting for players to join...';
 }
@@ -576,105 +343,130 @@ function renderLobbyPlayers() {
 async function hostStartGame() {
   state.currentRound = 0;
   state.scores = {};
-  state.totalRounds = state.settings.rounds;
-  state.gameTypes = state.settings.gameTypes;
   Object.values(state.players).forEach(p => state.scores[p.name] = 0);
-  await update(ref(db, `rooms/${state.roomCode}`), { status: 'playing', totalRounds: state.totalRounds });
-  await launchRound();
+  await update(ref(db, `rooms/${state.roomCode}`), { status:'playing' });
+  await startNextRound();
 }
 window.hostStartGame = hostStartGame;
 
-async function launchRound() {
+async function startNextRound() {
   state.currentRound++;
-  state.answered = {};
-  state.guesses = {};
-  state.revealed = false;
-  await remove(ref(db, `rooms/${state.roomCode}/answers`));
-  await remove(ref(db, `rooms/${state.roomCode}/guesses`));
+  if (state.currentRound > ROUNDS.length) { endGame(); return; }
+  const round = ROUNDS[state.currentRound - 1];
+  state.currentQuestion = 0;
+  state.questions = [];
 
-  const type = state.gameTypes[Math.floor(Math.random() * state.gameTypes.length)];
-  state.currentType = type;
+  // Show round intro
+  showScreen('screen-round-intro');
+  document.getElementById('intro-icon').textContent = round.icon;
+  document.getElementById('intro-round-num').textContent = `ROUND ${state.currentRound}`;
+  document.getElementById('intro-title').textContent = round.label.toUpperCase();
+  document.getElementById('intro-desc').textContent = round.desc;
 
-  showScreen('screen-game');
-  document.getElementById('round-label').textContent = `ROUND ${state.currentRound} / ${state.totalRounds}`;
-  document.getElementById('game-type-badge').textContent = gameTypeName(type);
-  document.getElementById('next-btn').style.display = 'none';
-  document.getElementById('end-btn').style.display = 'none';
-  document.getElementById('reveal-btn').style.display = 'none';
-  document.getElementById('result-banner').style.display = 'none';
-  document.getElementById('question-area').innerHTML = '<p style="color:var(--muted);font-size:1rem;">Generating question...</p>';
+  // Push round info to Firebase so players see the intro too
+  await update(ref(db, `rooms/${state.roomCode}`), {
+    status: 'round-intro',
+    roundNum: state.currentRound,
+    roundId: round.id,
+    roundLabel: round.label,
+    roundIcon: round.icon,
+  });
 
-  showLoading('Generating ' + gameTypeName(type) + ' question...');
+  // Generate all questions for this round
+  showLoading(`Generating ${round.label} questions...`);
   try {
-    const q = await generateQuestion(type);
+    state.questions = await generateRoundQuestions(round.id, state.settings.qpr);
     hideLoading();
-    state.currentQuestion = q;
-
-    // Push question to Firebase so players can see it
-    await update(ref(db, `rooms/${state.roomCode}`), {
-      currentType: type,
-      currentQuestion: JSON.stringify(q),
-      round: state.currentRound,
-      status: 'question'
-    });
-
-    renderHostQuestion(q, type);
-    renderScores();
-    startTimer(getTimerSecs(type));
+    // Small pause on intro screen
+    await sleep(2000);
+    await showNextQuestion();
   } catch(e) {
     hideLoading();
     console.error(e);
-    document.getElementById('question-area').innerHTML = '<p style="color:var(--red);">Error generating question. Check your API key and try again.</p>';
+    document.getElementById('intro-desc').textContent = 'Error generating questions. Check console.';
   }
 }
-window.nextRound = async () => {
-  if (state.currentRound >= state.totalRounds) { endGame(); return; }
-  await launchRound();
-};
 
-function gameTypeName(t) {
-  return {trivia:'🧠 Trivia',anagram:'🔤 Anagram',thisorthat:'🎯 This or That',closest:'🔢 Closest Number'}[t] || t;
+async function showNextQuestion() {
+  state.currentQuestion++;
+  if (state.currentQuestion > state.questions.length) {
+    // Round over — start next
+    await startNextRound();
+    return;
+  }
+  const round = ROUNDS[state.currentRound - 1];
+  const q = state.questions[state.currentQuestion - 1];
+  state.answered = {};
+  state.guesses = {};
+  state.revealed = false;
+
+  await remove(ref(db, `rooms/${state.roomCode}/answers`));
+  await remove(ref(db, `rooms/${state.roomCode}/guesses`));
+
+  showScreen('screen-game');
+  document.getElementById('round-label').textContent = `ROUND ${state.currentRound} — ${round.label.toUpperCase()}`;
+  document.getElementById('game-type-badge').textContent = round.icon + ' ' + round.label;
+  document.getElementById('q-progress').textContent = `Q ${state.currentQuestion}/${state.questions.length}`;
+  document.getElementById('result-banner').style.display = 'none';
+  document.getElementById('advance-bar').style.width = '0%';
+
+  // Push to Firebase for players
+  await update(ref(db, `rooms/${state.roomCode}`), {
+    status: 'question',
+    roundNum: state.currentRound,
+    roundId: round.id,
+    questionNum: state.currentQuestion,
+    currentQuestion: JSON.stringify(q),
+  });
+
+  renderHostQuestion(q, round.id);
+  renderScores();
+  startTimer(getTimerSecs(round.id));
 }
 
-async function generateQuestion(type) {
-  const diff = state.settings.difficulty || 'medium';
-  const topics = state.settings.topics?.length ? state.settings.topics : ['general'];
-  const topicStr = topics.join(', ');
-  const diffGuide = {
-    easy: 'Make it easy — well-known facts that most adults would know.',
-    medium: 'Make it moderate — interesting but not too obscure.',
-    hard: 'Make it challenging — obscure facts that will stump most people.'
-  }[diff] || '';
-
+async function generateRoundQuestions(roundId, count) {
   const prompts = {
-    trivia: `Generate a fun trivia question for adults on one of these topics: ${topicStr}. ${diffGuide} Return ONLY valid JSON with no markdown: {"question":"...","options":["A. option","B. option","C. option","D. option"],"answer":"A. option","fact":"brief interesting fact"}`,
-    anagram: `Generate a word anagram challenge. ${diff === 'easy' ? 'Pick a simple common word (5-6 letters).' : diff === 'hard' ? 'Pick a less common word (8-9 letters).' : 'Pick a common English word (6-8 letters).'} Return ONLY valid JSON with no markdown: {"word":"EXAMPLE","scrambled":"AXLMPPE","hint":"a brief hint about the word"}`,
-    thisorthat: `Generate a fun "would you rather" for adults. ${diffGuide} Return ONLY valid JSON with no markdown: {"question":"Would you rather...","optionA":"first option","optionB":"second option","fact":"a fun fact about either choice"}`,
-    closest: `Generate a guess-the-number question with a factual numerical answer. ${diffGuide} Return ONLY valid JSON with no markdown: {"question":"...","answer":1969,"unit":"year","hint":"brief hint revealed after"}`
+    general: `Generate ${count} different general knowledge trivia questions for adults. Return ONLY a valid JSON array with no markdown: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","fact":"brief interesting fact"},...]`,
+    sport:   `Generate ${count} different sport trivia questions for adults covering various sports. Return ONLY a valid JSON array with no markdown: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","fact":"brief interesting fact"},...]`,
+    music:   `Generate ${count} different music trivia questions for adults about songs, artists, albums across different eras. Return ONLY a valid JSON array with no markdown: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","fact":"brief interesting fact"},...]`,
+    closest: `Generate ${count} different "guess the number" questions with factual numerical answers. Vary the topics widely. Return ONLY a valid JSON array with no markdown: [{"question":"...","answer":1969,"unit":"year","hint":"brief hint revealed after"},...]`,
+    landmark: `Generate ${count} different famous world landmark or location descriptions. For each, describe the landmark in 2-3 vivid sentences WITHOUT naming it or the country directly. Then provide the answer. Also provide a Wikipedia image search term to find a photo of it. Return ONLY a valid JSON array with no markdown: [{"description":"...","answer":"Eiffel Tower, Paris, France","options":["A. Eiffel Tower, Paris","B. Burj Khalifa, Dubai","C. Empire State Building, New York","D. Tokyo Tower, Japan"],"wikiSearch":"Eiffel Tower","fact":"interesting fact about it"},...]`,
+    history: `Generate ${count} different trivia questions about major world events from 2020 to 2024 (news, politics, sport, culture). Return ONLY a valid JSON array with no markdown: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","fact":"brief context"},...]`,
   };
-  const GROQ_KEY = "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";
+
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${GROQ_KEY}`
-    },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_KEY}` },
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 400,
+      max_tokens: 2000,
       temperature: 0.9,
-      messages: [{ role: "user", content: prompts[type] }]
+      messages: [{ role: "user", content: prompts[roundId] }]
     })
   });
   const data = await resp.json();
   const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
-  return JSON.parse(text);
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed) ? parsed.slice(0, count) : [parsed];
 }
 
-function renderHostQuestion(q, type) {
+async function fetchWikipediaImage(searchTerm) {
+  try {
+    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchTerm)}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    return data.thumbnail?.source || data.originalimage?.source || null;
+  } catch(e) { return null; }
+}
+
+function renderHostQuestion(q, roundId) {
   const area = document.getElementById('question-area');
-  if (type === 'trivia') {
-    area.innerHTML = `<div class="question-text reveal">${q.question}</div>
+  const isMultiChoice = ['general','sport','music','history','landmark'].includes(roundId);
+
+  if (roundId === 'landmark') {
+    area.innerHTML = `
+      <div id="landmark-img-wrap" class="landmark-img-wrap"><p class="landmark-loading">Loading image...</p></div>
+      <div class="question-text reveal">${q.description}</div>
       <div class="options-grid" id="options-grid">
         ${q.options.map((opt,i) => `<div class="option-card" id="opt-${i}">
           <div class="option-letter">${'ABCD'[i]}</div>
@@ -682,165 +474,150 @@ function renderHostQuestion(q, type) {
           <div class="option-votes" id="votes-${i}"></div>
         </div>`).join('')}
       </div>`;
-  } else if (type === 'anagram') {
-    const tiles = q.scrambled.split('').map(l => `<div class="anagram-tile">${l}</div>`).join('');
-    area.innerHTML = `<div class="question-text reveal">Unscramble this word:</div>
-      <div class="anagram-letters">${tiles}</div>
-      <p style="color:var(--muted);font-size:0.9rem;margin-top:0.5rem;">Hint: ${q.hint}</p>
-      <div id="anagram-answers" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:8px;"></div>`;
-    document.getElementById('reveal-btn').style.display = 'inline-block';
-  } else if (type === 'thisorthat') {
-    area.innerHTML = `<div class="question-text reveal">${q.question}</div>
-      <div class="tot-grid">
-        <div class="tot-card">
-          <div class="tot-label">Option A</div>
-          <div class="tot-text">${q.optionA}</div>
-          <div class="tot-bar-wrap"><div class="tot-bar" id="bar-a" style="width:0%;background:var(--purple);"></div></div>
-          <div class="tot-count" id="count-a">0</div>
-        </div>
-        <div class="tot-card">
-          <div class="tot-label">Option B</div>
-          <div class="tot-text">${q.optionB}</div>
-          <div class="tot-bar-wrap"><div class="tot-bar" id="bar-b" style="width:0%;background:var(--accent);"></div></div>
-          <div class="tot-count" id="count-b">0</div>
-        </div>
+    // Fetch Wikipedia image async
+    fetchWikipediaImage(q.wikiSearch).then(imgUrl => {
+      const wrap = document.getElementById('landmark-img-wrap');
+      if (wrap) {
+        wrap.innerHTML = imgUrl
+          ? `<img src="${imgUrl}" alt="${q.wikiSearch}" />`
+          : `<p class="landmark-loading" style="padding:2rem;">📍 ${q.wikiSearch}</p>`;
+      }
+    });
+  } else if (isMultiChoice) {
+    area.innerHTML = `
+      <div class="question-text reveal">${q.question}</div>
+      <div class="options-grid" id="options-grid">
+        ${q.options.map((opt,i) => `<div class="option-card" id="opt-${i}">
+          <div class="option-letter">${'ABCD'[i]}</div>
+          <div class="option-text">${opt.replace(/^[A-D]\.\s*/,'')}</div>
+          <div class="option-votes" id="votes-${i}"></div>
+        </div>`).join('')}
       </div>`;
-  } else if (type === 'closest') {
-    area.innerHTML = `<div class="question-text reveal">${q.question}</div>
+  } else if (roundId === 'closest') {
+    const playerArr = Object.values(state.players);
+    area.innerHTML = `
+      <div class="question-text reveal">${q.question}</div>
       <div class="guess-list" id="guess-list">
-        ${Object.values(state.players).map(p => `<div class="guess-card" id="guess-${p.name.replace(/\s/g,'_')}">
+        ${playerArr.map(p => `<div class="guess-card" id="guess-${p.name.replace(/\s/g,'_')}">
           <div class="guess-name">${p.name}</div>
           <div class="guess-val" style="color:var(--muted);">—</div>
         </div>`).join('')}
       </div>`;
-    document.getElementById('reveal-btn').style.display = 'inline-block';
   }
 }
 
-function renderAnswerProgress() {
-  if (!state.currentQuestion || !state.currentType) return;
-  const answers = state.answered;
-  const type = state.currentType;
-  const q = state.currentQuestion;
+function onAnswersUpdate() {
+  const q = state.questions[state.currentQuestion - 1];
+  const round = ROUNDS[state.currentRound - 1];
+  if (!q || !round) return;
 
-  if (type === 'trivia') {
+  // Update vote counts on multiple choice
+  if (['general','sport','music','history','landmark'].includes(round.id)) {
+    const answerIdx = q.options ? q.options.findIndex(o => o === q.answer) : -1;
     const counts = {};
-    q.options.forEach((_,i) => counts[i] = 0);
-    Object.values(answers).forEach(a => { if (a.optionIndex !== undefined) counts[a.optionIndex] = (counts[a.optionIndex]||0)+1; });
-    q.options.forEach((_,i) => {
+    if (q.options) q.options.forEach((_,i) => counts[i] = 0);
+    Object.values(state.answered).forEach(a => {
+      if (a.optionIndex !== undefined) counts[a.optionIndex] = (counts[a.optionIndex]||0)+1;
+    });
+    if (q.options) q.options.forEach((_,i) => {
       const el = document.getElementById(`votes-${i}`);
       if (el) el.textContent = counts[i] ? `×${counts[i]}` : '';
     });
-  } else if (type === 'thisorthat') {
-    const total = Object.keys(answers).length;
-    let cA = 0, cB = 0;
-    Object.values(answers).forEach(a => { if (a.choice === 'A') cA++; else if (a.choice === 'B') cB++; });
-    const barA = document.getElementById('bar-a');
-    const barB = document.getElementById('bar-b');
-    const cntA = document.getElementById('count-a');
-    const cntB = document.getElementById('count-b');
-    if (barA) barA.style.width = (total ? Math.round(cA/total*100) : 0) + '%';
-    if (barB) barB.style.width = (total ? Math.round(cB/total*100) : 0) + '%';
-    if (cntA) cntA.textContent = cA;
-    if (cntB) cntB.textContent = cB;
-  } else if (type === 'anagram') {
-    const area = document.getElementById('anagram-answers');
-    if (area) {
-      area.innerHTML = Object.entries(answers).map(([name, a]) =>
-        `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:6px 14px;font-size:0.9rem;">${name}: ${a.guess || '?'}</span>`
-      ).join('');
-    }
   }
 
-  // Auto-reveal trivia when all answered
-  const playerCount = Object.keys(state.players).length;
-  const answerCount = Object.keys(answers).length;
-  if (type === 'trivia' && playerCount > 0 && answerCount >= playerCount && !state.revealed) {
-    skipToResults();
-  }
+  updateAdvanceBar();
+  checkAutoAdvance();
 }
 
-function renderGuesses() {
-  if (state.currentType !== 'closest') return;
+function onGuessesUpdate() {
+  const round = ROUNDS[state.currentRound - 1];
+  if (!round || round.id !== 'closest') return;
   Object.entries(state.guesses).forEach(([name, val]) => {
-    const key = name.replace(/\s/g,'_');
-    const card = document.getElementById(`guess-${key}`);
+    const card = document.getElementById(`guess-${name.replace(/\s/g,'_')}`);
     if (card) {
       card.classList.add('submitted');
       card.querySelector('.guess-val').textContent = val;
       card.querySelector('.guess-val').style.color = 'var(--text)';
     }
   });
+  updateAdvanceBar();
+  checkAutoAdvance();
+}
+
+function updateAdvanceBar() {
   const playerCount = Object.keys(state.players).length;
-  const guessCount = Object.keys(state.guesses).length;
-  if (playerCount > 0 && guessCount >= playerCount && !state.revealed) {
-    skipToResults();
+  if (playerCount === 0) return;
+  const round = ROUNDS[state.currentRound - 1];
+  const answerCount = round?.id === 'closest'
+    ? Object.keys(state.guesses).length
+    : Object.keys(state.answered).length;
+  const pct = Math.round((answerCount / playerCount) * 100);
+  const bar = document.getElementById('advance-bar');
+  if (bar) bar.style.width = pct + '%';
+}
+
+function checkAutoAdvance() {
+  if (state.revealed) return;
+  const playerCount = Object.keys(state.players).length;
+  if (playerCount === 0) return;
+  const round = ROUNDS[state.currentRound - 1];
+  const answerCount = round?.id === 'closest'
+    ? Object.keys(state.guesses).length
+    : Object.keys(state.answered).length;
+  if (answerCount >= playerCount) {
+    // Small delay so players see their answer registered
+    setTimeout(() => revealAndAdvance(), 1500);
   }
 }
 
-async function skipToResults() {
+async function revealAndAdvance() {
   if (state.revealed) return;
   state.revealed = true;
   clearTimer();
-  const q = state.currentQuestion;
-  const type = state.currentType;
+
+  const q = state.questions[state.currentQuestion - 1];
+  const round = ROUNDS[state.currentRound - 1];
 
   // Award points
-  if (type === 'trivia') {
+  if (round.id === 'closest') {
+    const results = Object.entries(state.guesses)
+      .map(([name, val]) => ({ name, val: parseInt(val), diff: Math.abs(parseInt(val) - q.answer) }))
+      .sort((a,b) => a.diff - b.diff);
+    results.forEach((r,i) => {
+      if (!isFinite(r.diff)) return;
+      const pts = i===0?200:i===1?80:30;
+      state.scores[r.name] = (state.scores[r.name]||0) + pts;
+      const card = document.getElementById(`guess-${r.name.replace(/\s/g,'_')}`);
+      if (card) {
+        if (i===0) card.classList.add('winner');
+        const d = document.createElement('div');
+        d.className = 'guess-diff';
+        d.textContent = `off by ${r.diff}`;
+        card.appendChild(d);
+      }
+    });
+    showBanner(`✓ Answer: ${q.answer} ${q.unit||''}  —  ${q.hint||''}`);
+  } else {
     const answerIdx = q.options.findIndex(o => o === q.answer);
     Object.entries(state.answered).forEach(([name, a]) => {
       if (a.optionIndex === answerIdx) {
         state.scores[name] = (state.scores[name]||0) + 100 + (a.timeLeft||0)*3;
       }
     });
-    // Highlight correct
     document.querySelectorAll('.option-card').forEach((card,i) => {
-      if (q.options[i] === q.answer) card.classList.add('correct');
-      else card.classList.add('wrong');
+      card.classList.add(q.options[i] === q.answer ? 'correct' : 'wrong');
     });
     showBanner(`✓ ${q.answer}  —  ${q.fact||''}`);
-  } else if (type === 'anagram') {
-    const first = Object.entries(state.answered).find(([n,a]) => a.guess?.toUpperCase() === q.word.toUpperCase());
-    if (first) {
-      state.scores[first[0]] = (state.scores[first[0]]||0) + 150;
-    }
-    showBanner(`✓ The word was: ${q.word}`);
-  } else if (type === 'thisorthat') {
-    const answers = state.answered;
-    let cA=0, cB=0;
-    Object.values(answers).forEach(a => { if(a.choice==='A') cA++; else if(a.choice==='B') cB++; });
-    const majority = cA >= cB ? 'A' : 'B';
-    Object.entries(answers).forEach(([name,a]) => {
-      if (a.choice === majority) state.scores[name] = (state.scores[name]||0) + 100;
-    });
-    showBanner(`Majority voted: ${majority === 'A' ? q.optionA : q.optionB}. ${q.fact||''}`);
-  } else if (type === 'closest') {
-    const guesses = state.guesses;
-    const results = Object.entries(guesses).map(([name, val]) => ({ name, val: parseInt(val), diff: Math.abs(parseInt(val) - q.answer) })).sort((a,b)=>a.diff-b.diff);
-    results.forEach((r,i) => {
-      const pts = i===0?200:i===1?80:20;
-      if (isFinite(r.diff)) state.scores[r.name] = (state.scores[r.name]||0) + pts;
-      const key = r.name.replace(/\s/g,'_');
-      const card = document.getElementById(`guess-${key}`);
-      if (card) {
-        card.querySelector('.guess-val').style.color = i===0?'var(--green)':'var(--text)';
-        if (i===0) card.classList.add('winner');
-        const diffEl = card.querySelector('.guess-diff') || document.createElement('div');
-        diffEl.className = 'guess-diff';
-        diffEl.textContent = `off by ${r.diff}`;
-        card.appendChild(diffEl);
-      }
-    });
-    showBanner(`✓ Answer: ${q.answer} ${q.unit||''}  —  ${q.hint||''}`);
   }
 
-  // Push scores to Firebase
   await update(ref(db, `rooms/${state.roomCode}`), { scores: state.scores, status: 'revealed' });
   renderScores();
-  document.getElementById('next-btn').style.display = 'inline-block';
-  if (state.currentRound >= state.totalRounds) document.getElementById('end-btn').style.display = 'inline-block';
+
+  // Auto-advance after 3 seconds
+  setTimeout(async () => {
+    await showNextQuestion();
+  }, 3000);
 }
-window.skipToResults = skipToResults;
 
 function showBanner(text) {
   const b = document.getElementById('result-banner');
@@ -850,17 +627,17 @@ function showBanner(text) {
 
 function renderScores() {
   const el = document.getElementById('live-scores');
+  if (!el) return;
   const sorted = Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
   const max = Math.max(...sorted.map(s=>s[1]), 1);
   const playerArr = Object.values(state.players);
   el.innerHTML = sorted.map(([name, pts]) => {
     const idx = playerArr.findIndex(p=>p.name===name);
-    const c = COLORS[(idx>=0?idx:0) % COLORS.length];
-    const pct = Math.round((pts/max)*100);
+    const c = COLORS[(idx>=0?idx:0)%COLORS.length];
     return `<div class="score-row">
       <div class="avatar" style="background:${c.bg};color:${c.text};width:30px;height:30px;font-size:12px;">${name[0].toUpperCase()}</div>
       <div class="score-name">${name}</div>
-      <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%;background:${c.bg};"></div></div>
+      <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${Math.round((pts/max)*100)}%;background:${c.bg};"></div></div>
       <div class="score-pts" style="color:${c.bg};">${pts}</div>
     </div>`;
   }).join('');
@@ -875,52 +652,42 @@ function startTimer(secs) {
   circle.style.stroke = 'var(--accent)';
   state.timerInterval = setInterval(() => {
     state.timeLeft--;
-    num.textContent = state.timeLeft;
-    const offset = circumference - (state.timeLeft / secs) * circumference;
-    circle.style.strokeDashoffset = offset;
-    if (state.timeLeft <= 5) circle.style.stroke = 'var(--red)';
-    if (state.timeLeft <= 0) {
-      clearTimer();
-      skipToResults();
-    }
+    if (num) num.textContent = state.timeLeft;
+    const offset = circumference - (state.timeLeft/secs)*circumference;
+    if (circle) circle.style.strokeDashoffset = offset;
+    if (state.timeLeft <= 5 && circle) circle.style.stroke = 'var(--red)';
+    if (state.timeLeft <= 0) { clearTimer(); revealAndAdvance(); }
   }, 1000);
 }
 
-function clearTimer() {
-  clearInterval(state.timerInterval);
-}
+function clearTimer() { clearInterval(state.timerInterval); }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function endGame() {
   clearTimer();
-  update(ref(db, `rooms/${state.roomCode}`), { status: 'gameover', scores: state.scores });
+  update(ref(db, `rooms/${state.roomCode}`), { status:'gameover', scores:state.scores });
   const sorted = Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
   const playerArr = Object.values(state.players);
-
-  // Podium
   const podiumEl = document.getElementById('podium');
-  const podiumOrder = [1,0,2]; // silver, gold, bronze display order
-  const podiumHeights = [80, 120, 60];
+  const podiumOrder = [1,0,2];
+  const podiumHeights = [80,120,60];
   const podiumColors = ['#9ca3af','#fbbf24','#f97316'];
-  podiumEl.innerHTML = podiumOrder.map((rank, pos) => {
+  podiumEl.innerHTML = podiumOrder.map((rank,pos) => {
     const entry = sorted[rank];
     if (!entry) return '';
     const idx = playerArr.findIndex(p=>p.name===entry[0]);
-    const c = COLORS[(idx>=0?idx:0) % COLORS.length];
+    const c = COLORS[(idx>=0?idx:0)%COLORS.length];
     return `<div class="podium-place">
       <div class="podium-avatar" style="background:${c.bg};color:${c.text};border-color:${podiumColors[pos]};">${entry[0][0].toUpperCase()}</div>
       <div class="podium-name">${entry[0]}</div>
       <div class="podium-pts">${entry[1]} pts</div>
-      <div class="podium-block" style="width:100px;height:${podiumHeights[pos]}px;background:${podiumColors[pos]}22;border:1px solid ${podiumColors[pos]};">
-        ${rank+1}
-      </div>
+      <div class="podium-block" style="width:100px;height:${podiumHeights[pos]}px;background:${podiumColors[pos]}22;border:1px solid ${podiumColors[pos]};">${rank+1}</div>
     </div>`;
   }).join('');
-
-  // All scores
-  const allEl = document.getElementById('final-all-scores');
-  allEl.innerHTML = sorted.map(([name,pts],i) => {
+  document.getElementById('final-all-scores').innerHTML = sorted.map(([name,pts],i) => {
     const idx = playerArr.findIndex(p=>p.name===name);
-    const c = COLORS[(idx>=0?idx:0) % COLORS.length];
+    const c = COLORS[(idx>=0?idx:0)%COLORS.length];
     return `<div class="lb-row">
       <div class="lb-rank" style="color:${['#fbbf24','#9ca3af','#f97316'][i]||'var(--muted)'};">${i+1}</div>
       <div class="avatar" style="background:${c.bg};color:${c.text};">${name[0].toUpperCase()}</div>
@@ -928,40 +695,30 @@ function endGame() {
       <div style="font-family:var(--font-display);font-size:1.5rem;">${pts}</div>
     </div>`;
   }).join('');
-
   saveLeaderboard(sorted);
   showScreen('screen-gameover');
 }
-window.endGame = endGame;
 
 function saveLeaderboard(sorted) {
   let lb = {};
-  try { lb = JSON.parse(localStorage.getItem('ff_lb2') || '{}'); } catch(e){}
+  try { lb = JSON.parse(localStorage.getItem('ff_lb3')||'{}'); } catch(e){}
   sorted.forEach(([name,pts],i) => {
     if (!lb[name]) lb[name] = {wins:0,points:0,games:0};
-    lb[name].games++;
-    lb[name].points += pts;
+    lb[name].games++; lb[name].points += pts;
     if (i===0) lb[name].wins++;
   });
-  try { localStorage.setItem('ff_lb2', JSON.stringify(lb)); } catch(e){}
+  try { localStorage.setItem('ff_lb3', JSON.stringify(lb)); } catch(e){}
 }
-
-function showLeaderboard() {
-  showScreen('screen-leaderboard');
-  renderLb(state.lbTab);
-}
-window.showLeaderboard = showLeaderboard;
 
 function renderLb(tab) {
   let lb = {};
-  try { lb = JSON.parse(localStorage.getItem('ff_lb2')||'{}'); } catch(e){}
+  try { lb = JSON.parse(localStorage.getItem('ff_lb3')||'{}'); } catch(e){}
   const entries = Object.entries(lb).sort((a,b)=>(b[1][tab]||0)-(a[1][tab]||0));
   const el = document.getElementById('lb-list');
   if (!entries.length) { el.innerHTML='<p style="color:var(--muted);text-align:center;padding:3rem;">No games played yet.</p>'; return; }
   const rankColors = ['#fbbf24','#9ca3af','#f97316'];
   el.innerHTML = entries.map(([name,stats],i) => {
-    const idx = i % COLORS.length;
-    const c = COLORS[idx];
+    const c = COLORS[i%COLORS.length];
     return `<div class="lb-row">
       <div class="lb-rank" style="color:${rankColors[i]||'var(--muted)'};">${i+1}</div>
       <div class="avatar" style="background:${c.bg};color:${c.text};">${name[0].toUpperCase()}</div>
@@ -974,39 +731,76 @@ function renderLb(tab) {
   }).join('');
 }
 
-window.setLbTab = (tab, el) => {
-  state.lbTab = tab;
-  document.querySelectorAll('[id^=lb-tab]').forEach(b => { b.className = 'btn btn-outline'; });
-  el.className = 'btn btn-primary';
-  renderLb(tab);
-};
-
-window.clearLb = () => {
-  if (confirm('Reset all leaderboard data?')) { try{localStorage.removeItem('ff_lb2');}catch(e){} renderLb(state.lbTab); }
-};
-
-window.playAgain = () => {
-  state.currentRound = 0;
-  state.scores = {};
-  Object.values(state.players).forEach(p => state.scores[p.name] = 0);
-  update(ref(db, `rooms/${state.roomCode}`), { status: 'lobby', round: 0 });
-  remove(ref(db, `rooms/${state.roomCode}/answers`));
-  remove(ref(db, `rooms/${state.roomCode}/guesses`));
-  showScreen('screen-lobby');
-};
-
-window.backToLobby = () => showScreen('screen-lobby');
+// Settings
+function openSettings() {
+  document.getElementById('setting-qpr').value = state.settings.qpr;
+  document.getElementById('qpr-val').textContent = state.settings.qpr;
+  document.querySelectorAll('#timer-pills .pill').forEach(p => p.classList.toggle('active', p.dataset.speed===state.settings.timerSpeed));
+  updateTimerDesc(state.settings.timerSpeed);
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
+function setTimerSpeed(btn) {
+  document.querySelectorAll('#timer-pills .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  updateTimerDesc(btn.dataset.speed);
+}
+function updateTimerDesc(speed) {
+  const t = {relaxed:'30s per question',normal:'20s per question',fast:'12s per question'};
+  document.getElementById('timer-desc').textContent = t[speed]||t.normal;
+}
+function saveSettings() {
+  state.settings.qpr = parseInt(document.getElementById('setting-qpr').value);
+  state.settings.timerSpeed = document.querySelector('#timer-pills .pill.active')?.dataset.speed||'normal';
+  renderSettingsSummary();
+  closeSettings();
+}
+function renderSettingsSummary() {
+  const s = state.settings;
+  const speedLabel = {relaxed:'😌 Relaxed',normal:'⚡ Normal',fast:'🔥 Fast'}[s.timerSpeed];
+  document.getElementById('settings-summary').innerHTML = [
+    `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:5px 14px;font-size:0.8rem;color:var(--accent2);">${s.qpr} questions per round</span>`,
+    `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:5px 14px;font-size:0.8rem;color:var(--accent2);">${speedLabel}</span>`,
+  ].join('');
+}
 
 function showScreen(id) {
-  ['screen-lobby','screen-game','screen-gameover','screen-leaderboard'].forEach(s => {
+  ['screen-lobby','screen-round-intro','screen-game','screen-gameover','screen-leaderboard'].forEach(s => {
     const el = document.getElementById(s);
-    if (el) el.style.display = s===id?'block':'none';
+    if (el) el.style.display = s===id ? (s==='screen-round-intro'?'flex':'block') : 'none';
   });
   document.getElementById('settings-overlay').classList.remove('open');
 }
 
-function showLoading(text) { document.getElementById('loading-text').textContent = text||'Loading...'; document.getElementById('loading').style.display='flex'; }
+function showLoading(text) { document.getElementById('loading-text').textContent=text||'Loading...'; document.getElementById('loading').style.display='flex'; }
 function hideLoading() { document.getElementById('loading').style.display='none'; }
+
+function showLeaderboard() { showScreen('screen-leaderboard'); renderLb(state.lbTab); }
+function backToLobby() { showScreen('screen-lobby'); }
+
+window.openSettings = openSettings;
+window.closeSettings = closeSettings;
+window.setTimerSpeed = setTimerSpeed;
+window.saveSettings = saveSettings;
+window.showLeaderboard = showLeaderboard;
+window.backToLobby = backToLobby;
+window.setLbTab = (tab,el) => {
+  state.lbTab=tab;
+  document.querySelectorAll('[id^=lb-tab]').forEach(b=>b.className='btn btn-outline');
+  el.className='btn btn-primary';
+  renderLb(tab);
+};
+window.clearLb = () => {
+  if(confirm('Reset all leaderboard data?')){try{localStorage.removeItem('ff_lb3');}catch(e){} renderLb(state.lbTab);}
+};
+window.playAgain = async () => {
+  state.currentRound=0; state.scores={};
+  Object.values(state.players).forEach(p=>state.scores[p.name]=0);
+  await update(ref(db,`rooms/${state.roomCode}`),{status:'lobby',round:0});
+  await remove(ref(db,`rooms/${state.roomCode}/answers`));
+  await remove(ref(db,`rooms/${state.roomCode}/guesses`));
+  showScreen('screen-lobby');
+};
 
 init();
 </script>
