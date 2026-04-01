@@ -160,8 +160,22 @@
 <div id="screen-waiting" class="screen">
   <div class="waiting-avatar" id="waiting-avatar"></div>
   <div class="waiting-name" id="waiting-name"></div>
-  <p class="waiting-msg">You're in! Waiting for the host to start...</p>
+  <p class="waiting-msg" id="waiting-msg">You're in! Waiting for the host to start...</p>
   <div class="spinner pulse"></div>
+</div>
+
+<!-- ROUND INTRO -->
+<div id="screen-round-intro" class="screen">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;text-align:center;">
+    <div style="font-size:4rem;margin-bottom:0.5rem;" id="p-intro-icon">🧠</div>
+    <div style="font-family:var(--font-display);font-size:4rem;color:var(--accent);line-height:1;" id="p-intro-round">ROUND 1</div>
+    <div style="font-family:var(--font-display);font-size:2rem;margin-bottom:0.5rem;" id="p-intro-title">GENERAL KNOWLEDGE</div>
+    <p style="color:var(--muted);font-size:0.95rem;">Get ready...</p>
+    <div style="margin-top:2rem;" class="pulse">
+      <div class="spinner"></div>
+      <p style="color:var(--muted);margin-top:0.75rem;font-size:0.85rem;">Preparing questions...</p>
+    </div>
+  </div>
 </div>
 
 <!-- QUESTION -->
@@ -239,6 +253,7 @@ let state = {
   hasAnswered: false,
   timerInterval: null,
   timeLeft: 0,
+  seenQuestion: null,
   roomListener: null
 };
 
@@ -301,18 +316,38 @@ function listenToRoom() {
     if (!room) return;
     const status = room.status;
 
-    if (status === 'question' && room.round !== state.currentRound) {
-      state.currentRound = room.round;
-      state.hasAnswered = false;
-      const q = JSON.parse(room.currentQuestion || '{}');
-      renderQuestion(q, room.currentType, room.round, room.totalRounds);
-      showScreen('screen-question');
-    } else if (status === 'revealed' && !state.hasAnswered) {
-      // Show result if player didn't answer
-      showScreen('screen-answered');
-      document.getElementById('answered-icon').textContent = '⏱';
-      document.getElementById('answered-msg').textContent = "Time's up!";
-      document.getElementById('answered-sub').textContent = 'Next round coming up...';
+    // Update score whenever available
+    if (room.scores?.[state.name] !== undefined) {
+      state.myScore = room.scores[state.name];
+      const el = document.getElementById('my-score');
+      if (el) el.textContent = state.myScore;
+    }
+
+    if (status === 'round-intro') {
+      // Show round intro screen
+      const introIcon = document.getElementById('p-intro-icon');
+      const introRound = document.getElementById('p-intro-round');
+      const introTitle = document.getElementById('p-intro-title');
+      if (introIcon) introIcon.textContent = room.roundIcon || '🎮';
+      if (introRound) introRound.textContent = `ROUND ${room.roundNum}`;
+      if (introTitle) introTitle.textContent = (room.roundLabel || '').toUpperCase();
+      showScreen('screen-round-intro');
+    } else if (status === 'question') {
+      const qKey = `${room.roundNum}-${room.questionNum}`;
+      if (qKey !== state.seenQuestion) {
+        state.seenQuestion = qKey;
+        state.hasAnswered = false;
+        const q = JSON.parse(room.currentQuestion || '{}');
+        renderQuestion(q, room.roundId, room.roundNum, room.questionNum);
+        showScreen('screen-question');
+      }
+    } else if (status === 'revealed') {
+      if (!state.hasAnswered) {
+        showScreen('screen-answered');
+        document.getElementById('answered-icon').textContent = '⏱';
+        document.getElementById('answered-msg').textContent = "Time's up!";
+        document.getElementById('answered-sub').textContent = 'Next question coming...';
+      }
     } else if (status === 'gameover') {
       const scores = room.scores || {};
       const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
@@ -325,94 +360,95 @@ function listenToRoom() {
     } else if (status === 'lobby') {
       state.currentRound = 0;
       state.myScore = 0;
+      state.seenQuestion = null;
       if (state.name) showScreen('screen-waiting');
-    }
-
-    // Update score if available
-    if (room.scores && room.scores[state.name] !== undefined) {
-      state.myScore = room.scores[state.name];
-      const el = document.getElementById('my-score');
-      if (el) el.textContent = state.myScore;
     }
   });
 }
 
-function renderQuestion(q, type, round, totalRounds) {
+async function fetchWikipediaImage(searchTerm) {
+  try {
+    const resp = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchTerm)}`);
+    const data = await resp.json();
+    return data.thumbnail?.source || data.originalimage?.source || null;
+  } catch(e) { return null; }
+}
+
+function renderQuestion(q, roundId, roundNum, questionNum) {
   clearTimer();
-  document.getElementById('q-round').textContent = `ROUND ${round} / ${totalRounds}`;
-  document.getElementById('q-type').textContent = {trivia:'🧠 Trivia',anagram:'🔤 Anagram',thisorthat:'🎯 This or That',closest:'🔢 Closest Number'}[type]||type;
+  document.getElementById('q-round').textContent = `ROUND ${roundNum}`;
+  document.getElementById('q-type').textContent = {
+    general:'🧠 General Knowledge', sport:'⚽ Sport', music:'🎵 Music',
+    closest:'🔢 Closest Number', landmark:'🌍 Where In The World', history:'📰 Recent History'
+  }[roundId] || roundId;
   document.getElementById('q-result').style.display = 'none';
   document.getElementById('my-score').textContent = state.myScore;
 
   const area = document.getElementById('q-answer-area');
   area.innerHTML = '';
-
   const qText = document.getElementById('q-text');
 
-  if (type === 'trivia') {
-    qText.textContent = q.question;
-    q.options.forEach((opt, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'option-btn reveal';
-      btn.style.animationDelay = (i * 0.06) + 's';
-      btn.innerHTML = `<span class="opt-letter">${'ABCD'[i]}</span> ${opt.replace(/^[A-D]\.\s*/,'')}`;
-      btn.onclick = () => submitTrivia(i, q, btn);
-      area.appendChild(btn);
+  const isMultiChoice = ['general','sport','music','history','landmark'].includes(roundId);
+
+  if (roundId === 'landmark') {
+    // Show Wikipedia image
+    const imgWrap = document.createElement('div');
+    imgWrap.style.cssText = 'background:var(--surface2);border-radius:14px;min-height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;overflow:hidden;';
+    imgWrap.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;padding:1rem;">Loading image...</p>';
+    area.appendChild(imgWrap);
+    fetchWikipediaImage(q.wikiSearch).then(imgUrl => {
+      imgWrap.innerHTML = imgUrl
+        ? `<img src="${imgUrl}" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px;" alt="Where is this?" />`
+        : `<p style="color:var(--muted);padding:1.5rem;font-size:0.9rem;">📍 Somewhere in the world...</p>`;
     });
-    startTimer(20);
-  } else if (type === 'anagram') {
-    qText.textContent = 'Unscramble this word:';
-    const tiles = q.scrambled.split('').map(l=>`<div class="anagram-tile">${l}</div>`).join('');
-    area.innerHTML = `<div class="anagram-tiles">${tiles}</div>
-      <p class="q-subtext">Hint: ${q.hint}</p>
-      <input type="text" id="anagram-input" placeholder="Your answer..." style="text-transform:uppercase;" />
-      <button class="btn btn-primary" onclick="submitAnagram('${q.word}')">Submit</button>`;
+    qText.textContent = q.description;
+    renderMultiChoice(q, area, roundId);
     startTimer(30);
-  } else if (type === 'thisorthat') {
+  } else if (isMultiChoice) {
     qText.textContent = q.question;
-    area.innerHTML = `<div class="tot-container">
-      <button class="tot-btn" id="tot-a" onclick="submitTot('A','${encodeURIComponent(q.optionA)}','${encodeURIComponent(q.optionB)}')">
-        <span class="tot-letter">A</span>
-        <span>${q.optionA}</span>
-      </button>
-      <button class="tot-btn" id="tot-b" onclick="submitTot('B','${encodeURIComponent(q.optionA)}','${encodeURIComponent(q.optionB)}')">
-        <span class="tot-letter">B</span>
-        <span>${q.optionB}</span>
-      </button>
-    </div>`;
+    renderMultiChoice(q, area, roundId);
     startTimer(20);
-  } else if (type === 'closest') {
+  } else if (roundId === 'closest') {
     qText.textContent = q.question;
-    area.innerHTML = `<div class="guess-wrap">
-      <div class="guess-input-row">
-        <input type="number" id="guess-input" placeholder="Your guess..." />
-        <button class="btn btn-primary" onclick="submitGuess()" style="width:auto;padding:14px 20px;border-radius:12px;">Submit</button>
-      </div>
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<div style="display:flex;gap:10px;margin-bottom:1rem;">
+      <input type="number" id="guess-input" placeholder="Your guess..." style="flex:1;margin-bottom:0;font-size:1.3rem;text-align:center;font-family:var(--font-display);letter-spacing:2px;" />
+      <button class="btn btn-primary" onclick="submitGuess()" style="width:auto;padding:14px 20px;border-radius:12px;flex-shrink:0;">Submit</button>
     </div>`;
-    startTimer(45);
+    area.appendChild(wrap);
+    startTimer(35);
   }
 }
 
-function submitTrivia(idx, q, btn) {
+function renderMultiChoice(q, area, roundId) {
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn reveal';
+    btn.style.animationDelay = (i * 0.06) + 's';
+    btn.innerHTML = `<span class="opt-letter">${'ABCD'[i]}</span> ${opt.replace(/^[A-D]\.\s*/,'')}`;
+    btn.onclick = () => submitAnswer(i, q, btn);
+    area.appendChild(btn);
+  });
+}
+
+function submitAnswer(idx, q, btn) {
   if (state.hasAnswered) return;
   state.hasAnswered = true;
   clearTimer();
   document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
   btn.classList.add('selected');
-  const correct = q.options[idx] === q.answer;
+  const answerIdx = q.options.findIndex(o => o === q.answer);
+  const correct = idx === answerIdx;
   if (correct) {
     btn.classList.add('correct');
-    showResultMsg('Correct! +' + (100 + state.timeLeft * 3) + ' points', true);
+    showResultMsg('Correct! 🎉', true);
   } else {
     btn.classList.add('wrong');
-    const correctBtn = [...document.querySelectorAll('.option-btn')].find(b => b.textContent.trim().replace(/^[A-D]\s*/,'') === q.answer.replace(/^[A-D]\.\s*/,''));
+    const correctBtn = document.querySelectorAll('.option-btn')[answerIdx];
     if (correctBtn) correctBtn.classList.add('correct');
-    showResultMsg('Not quite! The answer was: ' + q.answer, false);
+    showResultMsg('Not quite!', false);
   }
-  update(ref(db, `rooms/${state.roomCode}/answers/${state.name}`), {
-    optionIndex: idx,
-    timeLeft: state.timeLeft
-  });
+  update(ref(db, `rooms/${state.roomCode}/answers/${state.name}`), { optionIndex: idx, timeLeft: state.timeLeft });
 }
 
 window.submitAnagram = function(word) {
