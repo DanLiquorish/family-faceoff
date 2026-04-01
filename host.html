@@ -529,29 +529,78 @@ function getTimerSecs(type) {
 
 // Generate room code and set up listeners
 async function init() {
+  // Check if there's an active room saved from a previous session
+  let savedCode = null;
+  try { savedCode = localStorage.getItem('ff_host_room'); } catch(e){}
+
+  if (savedCode) {
+    // Try to reconnect to the existing room
+    const snap = await get(ref(db, `rooms/${savedCode}`));
+    if (snap.exists()) {
+      const room = snap.val();
+      // Only reconnect if the game is still active (not gameover)
+      if (room.status && room.status !== 'gameover') {
+        state.roomCode = savedCode;
+        // Restore scores and round state
+        if (room.scores) state.scores = room.scores;
+        if (room.round) state.currentRound = room.round;
+        if (room.totalRounds) state.totalRounds = room.totalRounds;
+        if (room.gameTypes) state.gameTypes = room.gameTypes;
+        document.getElementById('room-code-display').textContent = state.roomCode;
+        showReconnectBanner(room);
+        setupListeners();
+        return;
+      }
+    }
+  }
+
+  // No saved room or it's expired — create a fresh one
   state.roomCode = Math.random().toString(36).substr(2,5).toUpperCase();
   document.getElementById('room-code-display').textContent = state.roomCode;
+  try { localStorage.setItem('ff_host_room', state.roomCode); } catch(e){}
 
-  // Set game state in Firebase
   await set(ref(db, `rooms/${state.roomCode}`), {
     status: 'lobby',
     round: 0,
     totalRounds: state.totalRounds
   });
 
-  // Listen for players joining
+  setupListeners();
+}
+
+function showReconnectBanner(room) {
+  // Show a reconnect notice on the lobby screen
+  const banner = document.createElement('div');
+  banner.style.cssText = 'background:rgba(52,211,153,0.15);border:1px solid var(--green);border-radius:14px;padding:1rem 1.5rem;max-width:500px;margin-top:1rem;font-size:0.9rem;color:var(--green);';
+  const statusMap = { lobby:'in the lobby', playing:'in progress', question:'mid-question', revealed:'between questions', 'round-intro':'between rounds' };
+  banner.innerHTML = `<strong>Reconnected!</strong> Room <strong>${state.roomCode}</strong> was ${statusMap[room.status]||'active'}. Players can rejoin using the same code. <button onclick="restartCurrentQuestion()" style="background:none;border:1px solid var(--green);border-radius:50px;padding:4px 12px;color:var(--green);cursor:pointer;font-size:0.85rem;margin-left:8px;">Restart question</button>`;
+  const lobby = document.querySelector('#screen-lobby > div');
+  if (lobby) lobby.appendChild(banner);
+}
+
+async function restartCurrentQuestion() {
+  // Clear current answers and re-push the question so players get it again
+  await remove(ref(db, `rooms/${state.roomCode}/answers`));
+  await remove(ref(db, `rooms/${state.roomCode}/guesses`));
+  state.answered = {};
+  state.guesses = {};
+  state.revealed = false;
+  // Re-launch the current round from the host side
+  if (state.currentRound > 0) {
+    await launchRound();
+  }
+}
+window.restartCurrentQuestion = restartCurrentQuestion;
+
+function setupListeners() {
   onValue(ref(db, `rooms/${state.roomCode}/players`), snap => {
     state.players = snap.val() || {};
     renderLobbyPlayers();
   });
-
-  // Listen for answers in current round
   onValue(ref(db, `rooms/${state.roomCode}/answers`), snap => {
     state.answered = snap.val() || {};
     renderAnswerProgress();
   });
-
-  // Listen for guesses (closest number)
   onValue(ref(db, `rooms/${state.roomCode}/guesses`), snap => {
     state.guesses = snap.val() || {};
     renderGuesses();
@@ -579,7 +628,8 @@ async function hostStartGame() {
   state.totalRounds = state.settings.rounds;
   state.gameTypes = state.settings.gameTypes;
   Object.values(state.players).forEach(p => state.scores[p.name] = 0);
-  await update(ref(db, `rooms/${state.roomCode}`), { status: 'playing', totalRounds: state.totalRounds });
+  try { localStorage.setItem('ff_host_room', state.roomCode); } catch(e){}
+  await update(ref(db, `rooms/${state.roomCode}`), { status: 'playing', totalRounds: state.totalRounds, gameTypes: state.gameTypes });
   await launchRound();
 }
 window.hostStartGame = hostStartGame;
@@ -591,6 +641,8 @@ async function launchRound() {
   state.revealed = false;
   await remove(ref(db, `rooms/${state.roomCode}/answers`));
   await remove(ref(db, `rooms/${state.roomCode}/guesses`));
+  // Save round progress so host can reconnect
+  await update(ref(db, `rooms/${state.roomCode}`), { round: state.currentRound, scores: state.scores });
 
   const type = state.gameTypes[Math.floor(Math.random() * state.gameTypes.length)];
   state.currentType = type;
@@ -790,7 +842,7 @@ async function skipToResults() {
     const answerIdx = q.options.findIndex(o => o === q.answer);
     Object.entries(state.answered).forEach(([name, a]) => {
       if (a.optionIndex === answerIdx) {
-        state.scores[name] = (state.scores[name]||0) + 1;
+        state.scores[name] = (state.scores[name]||0) + 100 + (a.timeLeft||0)*3;
       }
     });
     // Highlight correct
@@ -802,7 +854,7 @@ async function skipToResults() {
   } else if (type === 'anagram') {
     const first = Object.entries(state.answered).find(([n,a]) => a.guess?.toUpperCase() === q.word.toUpperCase());
     if (first) {
-      state.scores[first[0]] = (state.scores[first[0]]||0) + 1;
+      state.scores[first[0]] = (state.scores[first[0]]||0) + 150;
     }
     showBanner(`✓ The word was: ${q.word}`);
   } else if (type === 'thisorthat') {
@@ -811,14 +863,14 @@ async function skipToResults() {
     Object.values(answers).forEach(a => { if(a.choice==='A') cA++; else if(a.choice==='B') cB++; });
     const majority = cA >= cB ? 'A' : 'B';
     Object.entries(answers).forEach(([name,a]) => {
-      if (a.choice === majority) state.scores[name] = (state.scores[name]||0) + 1;
+      if (a.choice === majority) state.scores[name] = (state.scores[name]||0) + 100;
     });
     showBanner(`Majority voted: ${majority === 'A' ? q.optionA : q.optionB}. ${q.fact||''}`);
   } else if (type === 'closest') {
     const guesses = state.guesses;
     const results = Object.entries(guesses).map(([name, val]) => ({ name, val: parseInt(val), diff: Math.abs(parseInt(val) - q.answer) })).sort((a,b)=>a.diff-b.diff);
     results.forEach((r,i) => {
-      const pts = i===0?1:0;
+      const pts = i===0?200:i===1?80:20;
       if (isFinite(r.diff)) state.scores[r.name] = (state.scores[r.name]||0) + pts;
       const key = r.name.replace(/\s/g,'_');
       const card = document.getElementById(`guess-${key}`);
@@ -988,6 +1040,7 @@ window.clearLb = () => {
 window.playAgain = () => {
   state.currentRound = 0;
   state.scores = {};
+  try { localStorage.removeItem('ff_host_room'); } catch(e){}
   Object.values(state.players).forEach(p => state.scores[p.name] = 0);
   update(ref(db, `rooms/${state.roomCode}`), { status: 'lobby', round: 0 });
   remove(ref(db, `rooms/${state.roomCode}/answers`));
