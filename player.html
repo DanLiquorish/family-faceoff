@@ -324,21 +324,24 @@ function listenToRoom() {
     }
 
     if (status === 'round-intro') {
-      // Show round intro screen
       const introIcon = document.getElementById('p-intro-icon');
       const introRound = document.getElementById('p-intro-round');
       const introTitle = document.getElementById('p-intro-title');
       if (introIcon) introIcon.textContent = room.roundIcon || '🎮';
-      if (introRound) introRound.textContent = `ROUND ${room.roundNum}`;
+      if (introRound) introRound.textContent = `ROUND ${room.roundNum || room.round || ''}`;
       if (introTitle) introTitle.textContent = (room.roundLabel || '').toUpperCase();
       showScreen('screen-round-intro');
     } else if (status === 'question') {
-      const qKey = `${room.roundNum}-${room.questionNum}`;
+      // Support both old field names (round, currentType) and new (roundNum, roundId, questionNum)
+      const roundNum = room.roundNum || room.round || 1;
+      const roundId = room.roundId || room.currentType || 'trivia';
+      const questionNum = room.questionNum || room.round || 1;
+      const qKey = `${roundNum}-${questionNum}`;
       if (qKey !== state.seenQuestion) {
         state.seenQuestion = qKey;
         state.hasAnswered = false;
         const q = JSON.parse(room.currentQuestion || '{}');
-        renderQuestion(q, room.roundId, room.roundNum, room.questionNum);
+        renderQuestion(q, roundId, roundNum, questionNum);
         showScreen('screen-question');
       }
     } else if (status === 'revealed') {

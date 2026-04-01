@@ -610,6 +610,11 @@ async function launchRound() {
     // Push question to Firebase so players can see it
     await update(ref(db, `rooms/${state.roomCode}`), {
       currentType: type,
+      roundId: type,
+      roundNum: state.currentRound,
+      roundLabel: gameTypeName(type).replace(/^[^ ]+ /,''),
+      roundIcon: {'trivia':'🧠','anagram':'🔤','thisorthat':'🎯','closest':'🔢'}[type]||'🎮',
+      questionNum: state.currentQuestion || state.currentRound,
       currentQuestion: JSON.stringify(q),
       round: state.currentRound,
       status: 'question'
@@ -649,22 +654,22 @@ async function generateQuestion(type) {
     thisorthat: `Generate a fun "would you rather" for adults. ${diffGuide} Return ONLY valid JSON with no markdown: {"question":"Would you rather...","optionA":"first option","optionB":"second option","fact":"a fun fact about either choice"}`,
     closest: `Generate a guess-the-number question with a factual numerical answer. ${diffGuide} Return ONLY valid JSON with no markdown: {"question":"...","answer":1969,"unit":"year","hint":"brief hint revealed after"}`
   };
-  const GROQ_KEY = "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";
-  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${GROQ_KEY}`
+      "x-api-key": "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",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 400,
-      temperature: 0.9,
       messages: [{ role: "user", content: prompts[type] }]
     })
   });
   const data = await resp.json();
-  const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
+  const text = data.content.map(c => c.text||'').join('').replace(/```json|```/g,'').trim();
   return JSON.parse(text);
 }
 
