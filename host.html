@@ -378,16 +378,27 @@ async function startNextRound() {
   try {
     const seed = Math.random().toString(36).substr(2,9);
     const today = new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-    const diffGuide = `(Session ID: ${seed}. Today is ${today}. Make sure all questions are completely fresh and different from any previous games.)`;
+    const diffGuide = `(Session ID: ${seed}. Today is ${today}. Generate completely fresh unique questions every time.)`;
     const prompt = round.prompt(state.settings.qpr, diffGuide);
     const resp = await fetch("https://api.groq.com/openai/v1/chat/completions",{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},
-      body:JSON.stringify({ model:"llama-3.3-70b-versatile", max_tokens:2000, temperature:1.0, messages:[{role:"system",content:"You are a creative quiz master. Always generate completely fresh, unique questions. Never repeat questions from previous rounds."},{role:"user",content:prompt}] })
+      body:JSON.stringify({ model:"llama-3.3-70b-versatile", max_tokens:2000, temperature:1.0,
+        messages:[
+          {role:"system",content:"You are a quiz master. Always respond with ONLY a valid JSON array. No explanation, no markdown, no code blocks. Just the raw JSON array starting with [ and ending with ]."},
+          {role:"user",content:prompt}
+        ]
+      })
     });
     const data = await resp.json();
-    const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
-    state.questions = JSON.parse(text);
+    if (!data.choices || !data.choices[0]) throw new Error('No response from API: ' + JSON.stringify(data));
+    let raw = data.choices[0].message.content.trim();
+    // Strip any markdown or extra text — find the first [ and last ]
+    const start = raw.indexOf('[');
+    const end = raw.lastIndexOf(']');
+    if (start === -1 || end === -1) throw new Error('No JSON array found in response: ' + raw.substring(0,200));
+    raw = raw.substring(start, end+1);
+    state.questions = JSON.parse(raw);
     if (!Array.isArray(state.questions)) state.questions = [state.questions];
     state.questions = state.questions.slice(0, state.settings.qpr);
     hideLoading();
@@ -395,8 +406,8 @@ async function startNextRound() {
     await showNextQuestion();
   } catch(e) {
     hideLoading();
-    console.error(e);
-    document.getElementById('intro-desc').textContent = 'Error generating questions. Check console.';
+    console.error('Question generation error:', e);
+    document.getElementById('intro-desc').textContent = 'Error generating questions: ' + e.message;
   }
 }
 
@@ -477,13 +488,11 @@ function onGuessesUpdate() {
   Object.entries(state.guesses).forEach(([name,val])=>{
     const key = name.replace(/\s/g,'_');
     let card = document.getElementById(`guess-${key}`);
-    // If card doesn't exist yet, create it dynamically
     if (!card) {
       const list = document.getElementById('guess-list');
       if (list) {
         card = document.createElement('div');
-        card.className = 'guess-card';
-        card.id = `guess-${key}`;
+        card.className = 'guess-card'; card.id = `guess-${key}`;
         card.innerHTML = `<div class="guess-name">${name}</div><div class="guess-val" style="color:var(--muted);">—</div>`;
         list.appendChild(card);
       }
